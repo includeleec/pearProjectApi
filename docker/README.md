@@ -78,6 +78,9 @@ https://www.yuque.com/bzsxmz/siuq1w/kggzna
 composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/
 
 composer install
+
+# 忽略本地php配置，因为我们是在docker 环境执行
+composer install --ignore-platform-reqs 
 ```
 
 # 初次登陆
