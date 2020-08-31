@@ -1,4 +1,4 @@
-FROM php:7.2-cli
+FROM php:7.2-fpm
 
 # change package source for aliyun
 run cp /etc/apt/sources.list /etc/apt/sources.list.bak \
@@ -36,6 +36,4 @@ RUN cd /tmp \
   && composer self-update \
   && composer clear
 
-WORKDIR /app
-
-CMD ["php", "-S", "0.0.0.0:8081"]
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
