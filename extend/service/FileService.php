@@ -91,7 +91,8 @@ class FileService
         }
         switch (empty($storage) ? sysconf('storage_type') : $storage) {
             case 'local':
-                return self::getBaseUriLocal() . $filename;
+                // return self::getBaseUriLocal() . $filename;
+                return $filename;
             case 'qiniu':
                 return self::getBaseUriQiniu() . $filename;
             case 'oss':
