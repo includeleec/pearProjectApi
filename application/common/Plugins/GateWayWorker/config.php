@@ -1,7 +1,7 @@
 <?php
-define('SERVER_ADDRESS', '192.168.0.159');//服务注册地址，需为内网IP地址
-define('SERVER_PORT', '2346');//服务注册端口
-define('CLIENT_PORT', '2345');//客户端监听端口
+define('SERVER_ADDRESS', '127.0.0.1');//服务注册地址，需为内网IP地址
+define('SERVER_PORT', '1234');//服务注册端口
+define('CLIENT_PORT', '1234');//客户端监听端口
 
 //ssl配置 请使用绝对路径。不开启可以不用关注
 define('USE_SSL', false);//是否使用ssl
