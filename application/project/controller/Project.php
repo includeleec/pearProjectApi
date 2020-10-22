@@ -2,27 +2,18 @@
 
 namespace app\project\controller;
 
-use app\common\Model\CommonModel;
 use app\common\Model\Member;
-use app\common\Model\MemberAccount;
-use app\common\Model\Notify;
 use app\common\Model\ProjectCollection;
 use app\common\Model\ProjectLog;
 use app\common\Model\ProjectMember;
 use app\common\Model\ProjectReport;
-use app\common\Model\SystemConfig;
 use controller\BasicApi;
-use OSS\Core\OssException;
 use service\DateService;
-use service\FileService;
-use service\NodeService;
-use service\RandomService;
 use think\Db;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
 use think\Exception;
 use think\Exception\DbException;
-use think\exception\PDOException;
 use think\facade\Request;
 use think\File;
 
@@ -44,56 +35,56 @@ class Project extends BasicApi
      * @return void
      * @throws DbException
      */
-   /* public function index11()
+    /* public function index11()
     {
-        $prefix = config('database.prefix');
-        $type = Request::post('type');
-        $page = Request::param('page', 1);
-        $pageSize = Request::param('pageSize', cookie('pageSize'));
-        $data = Request::only('recycle,archive,all');
-        $currentMember = getCurrentMember();
-        $memberCode = $currentMember['code'];
+    $prefix = config('database.prefix');
+    $type = Request::post('type');
+    $page = Request::param('page', 1);
+    $pageSize = Request::param('pageSize', cookie('pageSize'));
+    $data = Request::only('recycle,archive,all');
+    $currentMember = getCurrentMember();
+    $memberCode = $currentMember['code'];
 
-        $orgCode = getCurrentOrganizationCode();
-        if ($type == 'my' || $type == 'other') {
-            $sql = "select * from {$prefix}project as pp left join {$prefix}project_member as pm on pm.project_code = pp.code where pp.organization_code = '{$orgCode}' and (pm.member_code = '{$memberCode}' or pp.private = 0)";
-        } else {
-            $sql = "select * from {$prefix}project as pp left  join {$prefix}project_collection as pc on pc.project_code = pp.code where pp.organization_code = '{$orgCode}' and pc.member_code = '{$memberCode}'";
-        }
-        if ($type != 'other') {
-            $sql .= " and pp.deleted = 0";
-        }
-        if (isset($data['archive'])) {
-            $sql .= " and pp.archive = 1";
-        }
-        if (isset($data['recycle'])) {
-            $sql .= " and pp.deleted = 1";
-        }
-        $sql .= " group by pp.`code` order by pp.id desc";
-        $list = CommonModel::limitByQuery($sql, $page, $pageSize);
-        $newList = [];
-        if ($list['list']) {
-            foreach ($list['list'] as $key => &$item) {
-                $item['collected'] = 0;
-                $item['owner_name'] = '-';
-                $collected = ProjectCollection::where(['project_code' => $item['code'], 'member_code' => $currentMember['code']])->field('id')->find();
-                if ($collected) {
-                    $item['collected'] = 1;
-                }
+    $orgCode = getCurrentOrganizationCode();
+    if ($type == 'my' || $type == 'other') {
+    $sql = "select * from {$prefix}project as pp left join {$prefix}project_member as pm on pm.project_code = pp.code where pp.organization_code = '{$orgCode}' and (pm.member_code = '{$memberCode}' or pp.private = 0)";
+    } else {
+    $sql = "select * from {$prefix}project as pp left  join {$prefix}project_collection as pc on pc.project_code = pp.code where pp.organization_code = '{$orgCode}' and pc.member_code = '{$memberCode}'";
+    }
+    if ($type != 'other') {
+    $sql .= " and pp.deleted = 0";
+    }
+    if (isset($data['archive'])) {
+    $sql .= " and pp.archive = 1";
+    }
+    if (isset($data['recycle'])) {
+    $sql .= " and pp.deleted = 1";
+    }
+    $sql .= " group by pp.`code` order by pp.id desc";
+    $list = CommonModel::limitByQuery($sql, $page, $pageSize);
+    $newList = [];
+    if ($list['list']) {
+    foreach ($list['list'] as $key => &$item) {
+    $item['collected'] = 0;
+    $item['owner_name'] = '-';
+    $collected = ProjectCollection::where(['project_code' => $item['code'], 'member_code' => $currentMember['code']])->field('id')->find();
+    if ($collected) {
+    $item['collected'] = 1;
+    }
 
-                $owner = ProjectMember::where(['project_code' => $item['code'], 'is_owner' => 1])->field('member_code')->find();
-                if (!$owner) {
-                    continue;
-                }
-                $member = Member::where(['code' => $owner['member_code']])->field('name')->find();
-                if (!$member) {
-                    continue;
-                }
-                $item['owner_name'] = $member['name'];
-                $newList[] = $item;
-            }
-        }
-        $this->success('', ['list' => $newList, 'total' => $list['total']]);
+    $owner = ProjectMember::where(['project_code' => $item['code'], 'is_owner' => 1])->field('member_code')->find();
+    if (!$owner) {
+    continue;
+    }
+    $member = Member::where(['code' => $owner['member_code']])->field('name')->find();
+    if (!$member) {
+    continue;
+    }
+    $item['owner_name'] = $member['name'];
+    $newList[] = $item;
+    }
+    }
+    $this->success('', ['list' => $newList, 'total' => $list['total']]);
     }*/
 
     public function index()
@@ -124,7 +115,6 @@ class Project extends BasicApi
                 $deleted = 0;
                 $archive = -1;
                 $collection = -1;
-
 
         }
         $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
@@ -211,7 +201,6 @@ class Project extends BasicApi
         }
         $this->success('', compact('projectList', 'projectCount', 'projectSchedule', 'taskList', 'taskCount', 'taskOverdueCount', 'taskOverduePercent'));
 
-
     }
 
     /**
@@ -275,7 +264,7 @@ class Project extends BasicApi
         try {
             $result = $this->model->createProject($member['code'], $data['organization_code'], $data['name'], $data['description'], $data['templateCode']);
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         if ($result) {
             $this->success('', $result);
@@ -328,7 +317,7 @@ class Project extends BasicApi
         try {
             $result = $this->model->edit($code, $data);
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
 
         }
         if ($result) {
@@ -426,8 +415,7 @@ class Project extends BasicApi
      * @throws DbException
      * @throws ModelNotFoundException
      */
-    public
-    function _projectStats()
+    public function _projectStats()
     {
         $projectCode = Request::param('projectCode');
         if (!$projectCode) {
@@ -478,13 +466,12 @@ class Project extends BasicApi
     /**
      * 上传封面
      */
-    public
-    function uploadCover()
+    public function uploadCover()
     {
         try {
             $file = $this->model->uploadCover(Request::file('cover'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('', $file);
     }
@@ -492,13 +479,12 @@ class Project extends BasicApi
     /**
      * 放入回收站
      */
-    public
-    function recycle()
+    public function recycle()
     {
         try {
             $this->model->recycle(Request::post('projectCode'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('');
     }
@@ -506,28 +492,25 @@ class Project extends BasicApi
     /**
      * 恢复
      */
-    public
-    function recovery()
+    public function recovery()
     {
         try {
             $this->model->recovery(Request::post('projectCode'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('');
     }
 
-
     /**
      * 归档
      */
-    public
-    function archive()
+    public function archive()
     {
         try {
             $this->model->archive(Request::post('projectCode'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('');
     }
@@ -535,13 +518,12 @@ class Project extends BasicApi
     /**
      * 恢复归档
      */
-    public
-    function recoveryArchive()
+    public function recoveryArchive()
     {
         try {
             $this->model->recoveryArchive(Request::post('projectCode'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('');
     }
@@ -549,16 +531,14 @@ class Project extends BasicApi
     /**
      * 退出项目
      */
-    public
-    function quit()
+    public function quit()
     {
         try {
             $this->model->quit(Request::post('projectCode'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('');
     }
-
 
 }

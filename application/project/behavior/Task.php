@@ -8,7 +8,6 @@
 
 namespace app\project\behavior;
 
-
 use app\common\Model\Member;
 use app\common\Model\Notify;
 use app\common\Model\ProjectLog;
@@ -165,7 +164,7 @@ class Task
                 break;
             case 'setWorkTime':
                 $icon = 'clock-circle';
-                $remark = '更新预估工时为 ' .$task['work_time'];
+                $remark = '更新预估工时为 ' . $task['work_time'];
                 break;
             case 'linkFile':
                 $icon = 'link';
@@ -200,7 +199,7 @@ class Task
         }
         ProjectLog::create($logData);
         //工作流事件
-        if (!$isRobot && !$task['pcode']) {//子任务不触发
+        if (!$isRobot && !$task['pcode']) { //子任务不触发
             $workflowActions = ['create', 'move', 'done', 'redo', 'assign', 'setEndTime', 'pri'];
             if (in_array($data['type'], $workflowActions)) {
                 $taskStageCode = $task['stage_code'];
@@ -260,14 +259,14 @@ class Task
                         }
                     }
                 }
-            }else{
+            } else {
                 $taskMembers = TaskMember::where(['task_code' => $task['code']])->select()->toArray();
             }
             //todo 短信,消息推送
             if ($taskMembers) {
                 foreach ($taskMembers as $taskMember) {
                     if ($taskMember['member_code'] == $data['memberCode']) {
-                        continue;//跳过产生者
+                        continue; //跳过产生者
                     }
                     $member = Member::where(['code' => $taskMember['member_code']])->find();
                     //json_encode($task)
@@ -280,7 +279,7 @@ class Task
                                     'message_url' => 'http://dingtalk.com',
                                     'head' => ['bgcolor' => 'FFBBBBBB', 'text' => '任务动态'],
                                     'body' => ['title' => $notifyData['title'], 'content' => $notifyData['content']],
-                                ]
+                                ],
                             ];
                             $messageDingTalk->sendCorporationMessage($member['dingtalk_userid'], $params);
                         }
