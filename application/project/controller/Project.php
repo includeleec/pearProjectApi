@@ -118,8 +118,12 @@ class Project extends BasicApi
 
         }
         $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+
+        $status = [1 => '正常', 2 => '滞后'];
+
         if ($list['list']) {
             foreach ($list['list'] as $key => &$item) {
+
                 $item['owner_name'] = '-';
                 if (isset($item['project_code'])) {
                     $item['code'] = $item['project_code'];
@@ -129,6 +133,8 @@ class Project extends BasicApi
                 $item['collected'] = $collected ? 1 : 0;
                 $owner = ProjectMember::alias('pm')->leftJoin('member m', 'pm.member_code = m.code')->where(['pm.project_code' => $item['code'], 'is_owner' => 1])->field('member_code,name')->find();
                 $item['owner_name'] = $owner['name'];
+                $item['statusText'] = $status[$item['status']];
+
             }
             unset($item);
         }
@@ -290,8 +296,14 @@ class Project extends BasicApi
         if ($collected) {
             $project['collected'] = 1;
         }
-        $item['owner_name'] = '';
-        $item['owner_avatar'] = '';
+
+        $status = [1 => '正常', 2 => '滞后'];
+
+        // $item['owner_name'] = '';
+        // $item['owner_avatar'] = '';
+
+        $project['statusText'] = $status[$project['status']];
+
         $owner = ProjectMember::where(['project_code' => $project['code'], 'is_owner' => 1])->field('member_code')->find();
         if ($owner) {
             $member = Member::where(['code' => $owner['member_code']])->field('name,avatar')->find();

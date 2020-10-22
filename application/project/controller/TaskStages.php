@@ -31,9 +31,13 @@ class TaskStages extends BasicApi
         }
         $where[] = ['project_code', '=', $code];
         $list = $this->model->_list($where, 'sort asc,id asc');
+
+        $status = [1 => '正常', 2 => '滞后'];
+
         if ($list['list']) {
             foreach ($list['list'] as &$item) {
                 unset($item['id']);
+                $item['statusText'] = $status[$item['status']];
                 $item['tasksLoading'] = true; //任务加载状态
                 $item['fixedCreator'] = false; //添加任务按钮定位
                 $item['showTaskCard'] = false; //是否显示创建卡片
@@ -97,7 +101,7 @@ class TaskStages extends BasicApi
         try {
             $this->model->sort($data['preCode'], $data['nextCode']);
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success();
     }
@@ -116,7 +120,7 @@ class TaskStages extends BasicApi
         try {
             $result = $this->model->createStage($data['name'], $data['projectCode']);
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         if ($result) {
             $this->success('添加成功', $result);
@@ -165,7 +169,7 @@ class TaskStages extends BasicApi
         try {
             $result = $this->model->deleteStage($code);
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         if ($result) {
             $this->success('');
