@@ -5,7 +5,6 @@ namespace app\common\Model;
 use Exception;
 use function GuzzleHttp\Promise\task;
 use service\DateService;
-use service\RandomService;
 use think\Db;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
@@ -234,6 +233,7 @@ class Task extends CommonModel
         if (!$stage) {
             return error(2, '该任务列表无效');
         }
+
         $project = Project::where(['code' => $projectCode, 'deleted' => 0])->field('id,open_task_private')->find();
         if (!$project) {
             return error(3, '该项目已失效');
@@ -445,15 +445,15 @@ class Task extends CommonModel
             throw new Exception('任务已失效', 2);
         }
 //        $data = [
-//            'member_code' => getCurrentMember()['code'],
-//            'source_code' => $taskCode,
-//            'action_type' => 'task',
-//            'code' => createUniqueCode('projectLog'),
-//            'create_time' => nowTime(),
-//            'is_comment' => 1,
-//            'content' => $comment,
-//            'type' => 'comment'
-//        ];
+        //            'member_code' => getCurrentMember()['code'],
+        //            'source_code' => $taskCode,
+        //            'action_type' => 'task',
+        //            'code' => createUniqueCode('projectLog'),
+        //            'create_time' => nowTime(),
+        //            'is_comment' => 1,
+        //            'content' => $comment,
+        //            'type' => 'comment'
+        //        ];
         self::taskHook(getCurrentMember()['code'], $taskCode, 'comment', '', 1, '', $comment, '', $mentions);
         return true;
 //        return ProjectLog::create($data);
@@ -481,7 +481,7 @@ class Task extends CommonModel
                 $nextTask = self::where(['code' => $nextCode])->field('sort')->find();
                 $nextPreTask = self::where('sort', '<', $nextTask['sort'])->where('code', '<>', $nextCode)->where('stage_code', '=', $toStageCode)->where('done', $done)->order('sort desc')->find();
                 $nextPreTaskSort = $nextPreTask ? $nextPreTask['sort'] : 0;
-                $newSort = (int)($nextTask['sort'] + $nextPreTaskSort) / 2;
+                $newSort = (int) ($nextTask['sort'] + $nextPreTaskSort) / 2;
             } else {
                 $maxSort = self::where('stage_code', '=', $toStageCode)->where('done', $done)->max('sort');
                 $newSort = $maxSort + 65536;
@@ -499,7 +499,6 @@ class Task extends CommonModel
         }
         return false;
     }
-
 
     public function resetSort($stageCode, $done)
     {
@@ -524,25 +523,25 @@ class Task extends CommonModel
      * @throws ModelNotFoundException
      */
     /* public function sort($stageCode, $codes)
-     {
-         if (!$codes) {
-             return false;
-         }
-         if ($codes) {
-             $stage = TaskStages::where(['code' => $stageCode])->find();
-             $sort = 0;
-             foreach ($codes as $key => $code) {
-                 $task = self::where(['code' => $code])->find();
-                 self::update(['sort' => $sort, 'stage_code' => $stageCode], ['code' => $code]);
-                 $sort += 65536;
-                 if ($task['stage_code'] != $stageCode) {
-                     self::taskHook(getCurrentMember()['code'], $code, 'move', '', '', '', '', '', ['stageName' => $stage['name']]);
-                 }
-             }
-             return true;
-         }
-         return false;
-     }*/
+    {
+    if (!$codes) {
+    return false;
+    }
+    if ($codes) {
+    $stage = TaskStages::where(['code' => $stageCode])->find();
+    $sort = 0;
+    foreach ($codes as $key => $code) {
+    $task = self::where(['code' => $code])->find();
+    self::update(['sort' => $sort, 'stage_code' => $stageCode], ['code' => $code]);
+    $sort += 65536;
+    if ($task['stage_code'] != $stageCode) {
+    self::taskHook(getCurrentMember()['code'], $code, 'move', '', '', '', '', '', ['stageName' => $stage['name']]);
+    }
+    }
+    return true;
+    }
+    return false;
+    }*/
 
     /**
      * 成员任务
@@ -586,7 +585,6 @@ class Task extends CommonModel
         $list = Db::query($sql);
         return ['list' => $list, 'total' => $total];
     }
-
 
     /**
      * 导入成员
@@ -773,7 +771,6 @@ class Task extends CommonModel
         }
         return true;
     }
-
 
     public function getPriTextAttr($value, $data)
     {
