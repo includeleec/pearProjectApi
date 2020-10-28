@@ -27,16 +27,16 @@ class PayPlan extends BasicApi
     {
         $data = $request::only('task_stage_code,type,pay_date,pay_amount,remark');
 
-        if (!$request::post('task_stage_code')) {
+        if (!$data['task_stage_code']) {
             $this->error("task_stage_code is required");
         }
 
-        if (!$request::post('type')) {
+        if (!$data['type']) {
             $this->error("type is required");
         }
 
         try {
-            $result = $this->model->createPayPlan($data['task_stage_code'], $data['type'], $data['pay_date'], $data['pay_amount'], $data['remark']);
+            $result = $this->model->createPayPlan($data);
         } catch (\Exception $e) {
             $this->error($e->getMessage(), $e->getCode());
         }
