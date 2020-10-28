@@ -17,38 +17,37 @@ class PayPlan extends CommonModel
 {
     protected $append = [];
 
-    /**
-     * @param $stageCode
-     * @param $type
-     * @param $pay_date
-     * @param $pay_amount
-     * @param $remark
-
-     * @return array
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     */
-    public function createPayPlan($stageCode, $type, $pay_date, $pay_amount, $remark)
+    public function createPayPlan($data)
     {
 
         try {
-            $stage = TaskStages::where(['code' => $stageCode])->field('code')->find();
-            if (!$stage) {
-                return error(1, '该任务列表无效');
+
+            if (!$data['task_stage_code']) {
+                throw new \Exception('task_stage_code required', 1);
             }
 
-            if (!$type) {
-                return error(2, 'type required');
+            if (!$data['type']) {
+                throw new \Exception('type required', 1);
+            }
+
+            $stage = TaskStages::where(['code' => $data['task_stage_code']])->field('code')->find();
+            if (!$stage) {
+                throw new \Exception('找不到对应的任务列表 task stage code', 2);
+            }
+
+            $alreay_link_task_stage = self::where(['task_stage_code' => $data['task_stage_code']])->find();
+
+            if ($alreay_link_task_stage) {
+                throw new \Exception('已经存在支付计划关联到 task_stage_code', 3);
             }
 
             $data = [
-                'task_stage_code' => $stageCode,
+                'task_stage_code' => $data['task_stage_code'],
                 'code' => createUniqueCode('payPlan'),
-                'type' => $type,
-                'pay_date' => $pay_date,
-                'pay_amount' => $pay_amount,
-                'remark' => $remark,
+                'type' => $data['type'],
+                'pay_date' => $data['pay_date'],
+                'pay_amount' => $data['pay_amount'],
+                'remark' => $data['remark'],
             ];
 
             $result = self::create($data);
@@ -62,7 +61,7 @@ class PayPlan extends CommonModel
             return $result;
 
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage(), 1);
+            throw new \Exception($e->getMessage(), $e->getCode());
         }
 
     }

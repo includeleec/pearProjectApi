@@ -2,6 +2,7 @@
 
 namespace app\project\controller;
 
+use app\common\Model\PayPlan;
 use controller\BasicApi;
 use think\facade\Request;
 
@@ -44,6 +45,7 @@ class TaskStages extends BasicApi
                 $item['tasks'] = [];
                 $item['doneTasks'] = [];
                 $item['unDoneTasks'] = [];
+                $item['payPlan'] = PayPlan::where(['task_stage_code' => $item['code']])->find();
             }
         }
         $this->success('', $list);
