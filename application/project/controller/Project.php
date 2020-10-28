@@ -2,6 +2,7 @@
 
 namespace app\project\controller;
 
+use app\common\Model\Contract;
 use app\common\Model\Member;
 use app\common\Model\ProjectCollection;
 use app\common\Model\ProjectLog;
@@ -283,7 +284,7 @@ class Project extends BasicApi
     }
 
     /**
-     * 获取信息
+     * 获取单个项目信息
      *
      * @param Request $request
      * @return void
@@ -313,11 +314,19 @@ class Project extends BasicApi
                 $project['owner_avatar'] = $member['avatar'];
             }
         }
+
+        // 合同信息
+        $contract = Contract::where(['project_code' => $project['code']])->find();
+
+        if ($contract) {
+            $project['contract'] = $contract;
+        }
+
         $this->success('', $project);
     }
 
     /**
-     * 保存
+     * 更新项目信息
      *
      * @param Request $request
      * @return void
@@ -325,7 +334,7 @@ class Project extends BasicApi
      */
     public function edit(Request $request)
     {
-        $data = $request::only('name,description,cover,private,prefix,open_prefix,schedule,open_begin_time,open_task_private,task_board_theme,begin_time,end_time,auto_update_schedule');
+        $data = $request::only('name,description,cover,private,prefix,open_prefix,schedule,open_begin_time,open_task_private,task_board_theme,begin_time,end_time,auto_update_schedule,excel_id,set_up_year,belong_dep_code,belong_member_code,apply_set_up_date,annual_assignment_date,annual_assignment_batch,bidding_plan_submission_date,bidding_code,bidding_batch,bidding_amount,bidding_evaluation_date,winning_bid_accept_date,winning_bid_name,status');
         $code = $request::param('projectCode');
         try {
             $result = $this->model->edit($code, $data);
