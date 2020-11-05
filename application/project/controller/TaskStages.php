@@ -140,7 +140,7 @@ class TaskStages extends BasicApi
      */
     public function edit(Request $request)
     {
-        $data = $request::only('name,stageCode');
+        $data = $request::only('name,stageCode,plan_date,execute_date,status');
         if (!$request::post('name')) {
             $this->error("请填写列表名称");
         }
@@ -151,7 +151,15 @@ class TaskStages extends BasicApi
         if (!$template) {
             $this->error("该列表已失效");
         }
-        $result = $this->model->_edit(['name' => $data['name']], ['code' => $data['stageCode']]);
+
+        $param =
+            ['name' => $data['name'],
+            'plan_date' => $data['plan_date'],
+            'execute_date' => $data['execute_date'],
+            'status' => $data['status'],
+        ];
+
+        $result = $this->model->_edit($param, ['code' => $data['stageCode']]);
         if ($result) {
             $this->success('');
         }

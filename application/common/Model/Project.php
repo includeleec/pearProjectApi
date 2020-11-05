@@ -22,7 +22,7 @@ class Project extends CommonModel
         return self::where(['id' => $id, 'deleted' => 0, 'archive' => 0])->find();
     }
 
-    public function getMemberProjects($memberCode = '',$organizationCode = '', $deleted = 0, $archive = 0, $collection = -1, $page = 1, $pageSize = 10)
+    public function getMemberProjects($memberCode = '', $organizationCode = '', $deleted = 0, $archive = 0, $collection = -1, $page = 1, $pageSize = 10)
     {
         if (!$memberCode) {
             $memberCode = getCurrentMember()['code'];
@@ -76,7 +76,7 @@ class Project extends CommonModel
                 'description' => $description,
                 'organization_code' => $orgCode,
                 'task_board_theme' => 'simple',
-                'cover' => FileService::getFilePrefix() . 'static/image/default/project-cover.png'
+                'cover' => FileService::getFilePrefix() . 'static/image/default/project-cover.png',
             ];
             $result = self::create($project);
             $projectMemberModel = new ProjectMember();
@@ -117,12 +117,30 @@ class Project extends CommonModel
         if (!$project) {
             throw new \Exception('该项目在回收站中无法编辑', 1);
         }
+
+        //添加 项目负责人时候校验
+        if (isset($data['belong_member_code'])) {
+            $member = Member::where(['code' => $data['belong_member_code']])->find();
+
+            if (!$member) {
+                throw new \Exception('belong_member_code 没有对应的 member', 2);
+            }
+        }
+
+        //添加 负责部门
+        if (isset($data['belong_dep_code'])) {
+            $dep = Department::where(['code' => $data['belong_dep_code']])->find();
+
+            if (!$dep) {
+                throw new \Exception('belong_dep_code 没有对应的 department', 2);
+            }
+        }
+
         $result = self::update($data, ['code' => $code]);
         //TODO 项目动态
         self::projectHook(getCurrentMember()['code'], $code, 'edit');
         return $result;
     }
-
 
     /**
      * @param File $file
