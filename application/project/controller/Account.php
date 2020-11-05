@@ -6,17 +6,12 @@ use app\common\Model\Member;
 use app\common\Model\MemberAccount;
 use app\common\Model\Organization;
 use app\common\Model\ProjectAuth;
-use app\common\Model\SystemConfig;
 use controller\BasicApi;
 use Exception;
-use service\FileService;
-use service\MessageService;
-use service\NodeService;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
 use think\exception\DbException;
 use think\facade\Request;
-use think\File;
 
 /**
  * Class Account
@@ -42,7 +37,7 @@ class Account extends BasicApi
     {
         $currentOrganizationCode = getCurrentOrganizationCode();
         $where = [['organization_code', '=', $currentOrganizationCode]];
-//        $where = [['organization_code', '=', $currentOrganizationCode], ['is_owner', '=', 0]];
+        //        $where = [['organization_code', '=', $currentOrganizationCode], ['is_owner', '=', 0]];
         $params = Request::only('account,mobile,email,searchType,keyword');
         $departmentCode = Request::param('departmentCode');
         if (isset($params['keyword']) && $params['keyword']) {
@@ -95,7 +90,7 @@ class Account extends BasicApi
                         $departments[] = $department['name'];
                     }
                 }
-                $item['departments'] = $departments ? implode(' - ', $departments) : '';
+                $item['departments'] = $departments ? implode(',', $departments) : '';
             }
             unset($item);
         }

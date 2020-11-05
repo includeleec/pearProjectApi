@@ -3,6 +3,7 @@
 namespace app\project\controller;
 
 use app\common\Model\Contract;
+use app\common\Model\Department;
 use app\common\Model\Member;
 use app\common\Model\ProjectCollection;
 use app\common\Model\ProjectLog;
@@ -30,64 +31,7 @@ class Project extends BasicApi
         }
     }
 
-    /**
-     * 显示资源列表
-     *
-     * @return void
-     * @throws DbException
-     */
-    /* public function index11()
-    {
-    $prefix = config('database.prefix');
-    $type = Request::post('type');
-    $page = Request::param('page', 1);
-    $pageSize = Request::param('pageSize', cookie('pageSize'));
-    $data = Request::only('recycle,archive,all');
-    $currentMember = getCurrentMember();
-    $memberCode = $currentMember['code'];
-
-    $orgCode = getCurrentOrganizationCode();
-    if ($type == 'my' || $type == 'other') {
-    $sql = "select * from {$prefix}project as pp left join {$prefix}project_member as pm on pm.project_code = pp.code where pp.organization_code = '{$orgCode}' and (pm.member_code = '{$memberCode}' or pp.private = 0)";
-    } else {
-    $sql = "select * from {$prefix}project as pp left  join {$prefix}project_collection as pc on pc.project_code = pp.code where pp.organization_code = '{$orgCode}' and pc.member_code = '{$memberCode}'";
-    }
-    if ($type != 'other') {
-    $sql .= " and pp.deleted = 0";
-    }
-    if (isset($data['archive'])) {
-    $sql .= " and pp.archive = 1";
-    }
-    if (isset($data['recycle'])) {
-    $sql .= " and pp.deleted = 1";
-    }
-    $sql .= " group by pp.`code` order by pp.id desc";
-    $list = CommonModel::limitByQuery($sql, $page, $pageSize);
-    $newList = [];
-    if ($list['list']) {
-    foreach ($list['list'] as $key => &$item) {
-    $item['collected'] = 0;
-    $item['owner_name'] = '-';
-    $collected = ProjectCollection::where(['project_code' => $item['code'], 'member_code' => $currentMember['code']])->field('id')->find();
-    if ($collected) {
-    $item['collected'] = 1;
-    }
-
-    $owner = ProjectMember::where(['project_code' => $item['code'], 'is_owner' => 1])->field('member_code')->find();
-    if (!$owner) {
-    continue;
-    }
-    $member = Member::where(['code' => $owner['member_code']])->field('name')->find();
-    if (!$member) {
-    continue;
-    }
-    $item['owner_name'] = $member['name'];
-    $newList[] = $item;
-    }
-    }
-    $this->success('', ['list' => $newList, 'total' => $list['total']]);
-    }*/
-
+    // 项目列表
     public function index()
     {
         $selectBy = Request::post('selectBy', 'all');
@@ -135,6 +79,20 @@ class Project extends BasicApi
                 $owner = ProjectMember::alias('pm')->leftJoin('member m', 'pm.member_code = m.code')->where(['pm.project_code' => $item['code'], 'is_owner' => 1])->field('member_code,name')->find();
                 $item['owner_name'] = $owner['name'];
                 $item['statusText'] = $status[$item['status']];
+
+                //项目负责人
+                $belong_member = Member::where(['code' => $item['belong_member_code']])->find();
+
+                if ($belong_member) {
+                    $item['belong_member'] = $belong_member;
+                }
+
+                //负责部门
+                $belong_dep = Department::where(['code' => $item['belong_dep_code']])->find();
+
+                if ($belong_dep) {
+                    $item['belong_dep'] = $belong_dep;
+                }
 
             }
             unset($item);
@@ -322,6 +280,20 @@ class Project extends BasicApi
             $project['contract'] = $contract;
         }
 
+        //项目负责人
+        $belong_member = Member::where(['code' => $project['belong_member_code']])->find();
+
+        if ($belong_member) {
+            $project['belong_member'] = $belong_member;
+        }
+
+        //负责部门
+        $belong_dep = Department::where(['code' => $project['belong_dep_code']])->find();
+
+        if ($belong_dep) {
+            $project['belong_dep'] = $belong_dep;
+        }
+
         $this->success('', $project);
     }
 
@@ -343,7 +315,7 @@ class Project extends BasicApi
 
         }
         if ($result) {
-            $this->success();
+            $this->success('修改成功');
         }
         $this->error("操作失败，请稍候再试！");
     }
