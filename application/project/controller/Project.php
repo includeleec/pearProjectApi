@@ -62,7 +62,12 @@ class Project extends BasicApi
                 $collection = -1;
 
         }
-        $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+
+        if($selectBy === 'all') {
+            $list = $this->model->getProjects($deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+        } else {
+            $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+        }
 
         $status = [1 => '正常', 2 => '滞后'];
 
@@ -228,10 +233,10 @@ class Project extends BasicApi
         if (!$request::post('name')) {
             $this->error("请填写项目名称");
         }
-        $data['organization_code'] = getCurrentOrganizationCode();
+//        $data['organization_code'] = getCurrentOrganizationCode();
         $member = getCurrentMember();
         try {
-            $result = $this->model->createProject($member['code'], $data['organization_code'], $data['name'], $data['description'], $data['templateCode']);
+            $result = $this->model->createProject($member['code'], $data['name'], $data['description'], $data['templateCode']);
         } catch (\Exception $e) {
             $this->error($e->getMessage(), $e->getCode());
         }
