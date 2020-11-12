@@ -22,21 +22,51 @@ class Project extends CommonModel
         return self::where(['id' => $id, 'deleted' => 0, 'archive' => 0])->find();
     }
 
-    public function getMemberProjects($memberCode = '', $organizationCode = '', $deleted = 0, $archive = 0, $collection = -1, $page = 1, $pageSize = 10)
+    public function getProjects( $deleted = 0, $archive = 0, $collection = -1, $page = 1, $pageSize = 10)
     {
-        if (!$memberCode) {
-            $memberCode = getCurrentMember()['code'];
-        }
-        if (!$organizationCode) {
-            $organizationCode = getCurrentOrganizationCode();
-        }
         if ($page < 1) {
             $page = 1;
         }
         $offset = ($page - 1) * $pageSize;
         $limit = $pageSize;
         $prefix = config('database.prefix');
-        $sql = "select *,p.id as id,p.name as name,p.code as code,p.create_time as create_time from {$prefix}project as p join {$prefix}project_member as pm on p.code = pm.project_code left join {$prefix}project_collection as pc on p.code = pc.project_code where pm.member_code = '{$memberCode}'  and p.organization_code = '$organizationCode'";
+        $sql = "select *,p.id as id,p.name as name,p.code as code,p.create_time as create_time 
+                from {$prefix}project as p join {$prefix}project_member as pm on p.code = pm.project_code left join {$prefix}project_collection as pc 
+                on p.code = pc.project_code";
+        if ($deleted != -1) {
+            $sql .= " and p.deleted = {$deleted} ";
+        }
+        if ($archive != -1) {
+            $sql .= " and p.archive = {$archive} ";
+        }
+        if ($collection == 1) {
+            $sql .= " and pc.project_code is not null";
+        }
+        $sql .= "group by p.id order by pc.id desc, p.id desc";
+        $total = Db::query($sql);
+        $total = count($total);
+        $sql .= " limit {$offset},{$limit}";
+        $list = Db::query($sql);
+        return ['list' => $list, 'total' => $total];
+    }
+
+    public function getMemberProjects($memberCode = '', $organizationCode = '', $deleted = 0, $archive = 0, $collection = -1, $page = 1, $pageSize = 10)
+    {
+        if (!$memberCode) {
+            $memberCode = getCurrentMember()['code'];
+        }
+//        if (!$organizationCode) {
+//            $organizationCode = getCurrentOrganizationCode();
+//        }
+        if ($page < 1) {
+            $page = 1;
+        }
+        $offset = ($page - 1) * $pageSize;
+        $limit = $pageSize;
+        $prefix = config('database.prefix');
+        $sql = "select *,p.id as id,p.name as name,p.code as code,p.create_time as create_time 
+                from {$prefix}project as p join {$prefix}project_member as pm on p.code = pm.project_code left join {$prefix}project_collection as pc 
+                on p.code = pc.project_code where pm.member_code = '{$memberCode}'";
         if ($deleted != -1) {
             $sql .= " and p.deleted = {$deleted} ";
         }
@@ -57,14 +87,13 @@ class Project extends CommonModel
     /**
      * 创建项目
      * @param $memberCode
-     * @param $orgCode
      * @param $name
      * @param string $description
      * @param string $templateCode
      * @return Project
      * @throws \Exception
      */
-    public function createProject($memberCode, $orgCode, $name, $description = '', $templateCode = '')
+    public function createProject($memberCode, $name, $description = '', $templateCode = '')
     {
         //d85f1bvwpml2nhxe94zu7tyi
         Db::startTrans();
@@ -74,7 +103,6 @@ class Project extends CommonModel
                 'code' => createUniqueCode('project'),
                 'name' => $name,
                 'description' => $description,
-                'organization_code' => $orgCode,
                 'task_board_theme' => 'simple',
                 'cover' => FileService::getFilePrefix() . 'static/image/default/project-cover.png',
             ];
