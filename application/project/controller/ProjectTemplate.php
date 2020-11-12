@@ -3,19 +3,8 @@
 namespace app\project\controller;
 
 use app\common\Model\CommonModel;
-use app\common\Model\Member;
-use app\common\Model\MemberAccount;
-use app\common\Model\Notify;
-use app\common\Model\ProjectCollection;
-use app\common\Model\ProjectMember;
-use app\common\Model\SystemConfig;
 use controller\BasicApi;
-use OSS\Core\OssException;
-use service\FileService;
-use service\NodeService;
-use service\RandomService;
 use think\Exception;
-use think\exception\PDOException;
 use think\facade\Request;
 use think\File;
 
@@ -45,13 +34,13 @@ class ProjectTemplate extends BasicApi
         $sql = '';
         $viewType = Request::post('viewType', -1);
         if ($viewType == -1) {
-            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' or pt.is_system = 1";
+            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' or pt.is_system = 1 and pt.is_use = 1";
         }
         if ($viewType == 1) {
-            $sql = "select * from {$prefix}project_template as pt where pt.is_system = 1";
+            $sql = "select * from {$prefix}project_template as pt where pt.is_system = 1 and pt.is_use = 1";
         }
         if ($viewType == 0) {
-            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' and pt.is_system = 0";
+            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' and pt.is_system = 0 and pt.is_use = 1";
         }
         $list = CommonModel::limitByQuery($sql, $page, $pageSize);
         if ($list['list']) {
@@ -78,7 +67,7 @@ class ProjectTemplate extends BasicApi
         try {
             $result = $this->model->createProjectTemplate($member['code'], $data['organization_code'], $data['name'], $data['description'], $data['cover']);
         } catch (Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         if ($result) {
             $this->success('制作模板成功', $result);
@@ -94,7 +83,7 @@ class ProjectTemplate extends BasicApi
         try {
             $file = $this->model->uploadCover(Request::file('cover'));
         } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());;
+            $this->error($e->getMessage(), $e->getCode());
         }
         $this->success('', $file);
     }
