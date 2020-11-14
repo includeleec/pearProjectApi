@@ -18,6 +18,11 @@ class DepartmentMember extends CommonModel
 {
     protected $append = [];
 
+
+
+
+
+
     /**
      * @param $accountCode
      * @param string $departmentCode 部门code
@@ -174,7 +179,7 @@ class DepartmentMember extends CommonModel
                                         } catch (Exception $e) {
                                             return error(2, $e->getMessage());
                                         }
-                                    }else{
+                                    } else {
 
                                     }
                                 }

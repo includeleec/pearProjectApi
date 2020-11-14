@@ -17,6 +17,26 @@ class Project extends CommonModel
     protected $append = [];
     protected $defaultStages = [['name' => '待处理'], ['name' => '进行中'], ['name' => '已完成']];
 
+    // 当前任务阶段
+    public function currentTaskStage() {
+        return $this->belongsTo('taskStages','current_task_stage_id');
+    }
+
+    // 负责人
+    public function belongMember() {
+        return $this->belongsTo('Member','belong_member_id');
+    }
+
+    // 负责部门
+    public function belongDepartment() {
+        return $this->belongsTo('Department','belong_department_id');
+    }
+
+    // 项目合同
+    public function contract() {
+        return $this->belongsTo('Contract');
+    }
+
     public static function getEffectInfo($id)
     {
         return self::where(['id' => $id, 'deleted' => 0, 'archive' => 0])->find();

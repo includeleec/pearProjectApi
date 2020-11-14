@@ -13,7 +13,14 @@ use think\File;
  */
 class TaskStages extends CommonModel
 {
-    protected $append = [];
+    protected $append = ['status_text'];
+
+
+    public function getStatusTextAttr($value,$data)
+    {
+        $status = [1=>'正常',2=>'滞后'];
+        return $status[$data['status']];
+    }
 
     /**
      * 任务列表下的任务

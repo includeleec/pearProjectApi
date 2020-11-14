@@ -14,6 +14,11 @@ class Department extends CommonModel
 {
     protected $append = [];
 
+    public function members()
+    {
+        return $this->hasMany('Member');
+    }
+
     /**
      * @param $name
      * @param string $parentDepartmentCode

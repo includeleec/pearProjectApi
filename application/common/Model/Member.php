@@ -20,6 +20,12 @@ class Member extends CommonModel
 
     protected $append = [];
 
+    public function department()
+    {
+        return $this->belongsTo('Department');
+    }
+
+
     public static function login($member)
     {
         // 更新登录信息
@@ -247,5 +253,63 @@ class Member extends CommonModel
     public function uploadImg(File $file)
     {
         return $this->_uploadImg($file, config('upload.base_path') . config('upload.member_avatar'));
+    }
+
+
+
+    /**
+     * @param $memberId 成员 id
+     * @param $departmentId 部门 id
+
+     * @return DepartmentMember|MemberAccount
+     * @throws DataNotFoundException
+     * @throws ModelNotFoundException
+     * @throws DbException
+     */
+    public function inviteMember($memberId, $departmentId)
+    {
+        if ($departmentId) {
+            $department = Department::where(['id' => $departmentId])->find();
+            if (!$department) {
+                throw new Exception('该部门不存在', 1);
+            }
+            $hasJoined = self::where(['id' => $memberId, 'department_id' => $departmentId])->find();
+
+            if ($hasJoined) {
+                throw new Exception('已加入该部门', 2);
+            }
+            $data = [
+                'id' => $memberId,
+                'department_id' => $departmentId,
+            ];
+            $result = self::update($data);
+            return $result;
+        }
+    }
+
+    /**
+     * @param $memberId 成员 id
+     * @param $departmentId 部门 id
+     * @return bool
+     * @throws DataNotFoundException
+     * @throws ModelNotFoundException
+     * @throws DbException
+     */
+    public function removeMember($memberId, $departmentId)
+    {
+        $department = Department::where(['id' => $departmentId])->find();
+        if (!$department) {
+            throw new Exception('该部门不存在', 1);
+        }
+        $hasJoined = self::where(['id' => $memberId, 'department_id' => $departmentId])->find();
+        if (!$hasJoined) {
+            throw new Exception('尚未加入该部门', 2);
+        }
+
+        $data = [
+            'id' => $memberId,
+            'department_id' => null,
+        ];
+        return self::update($data);
     }
 }

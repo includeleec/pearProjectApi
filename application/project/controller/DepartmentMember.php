@@ -25,6 +25,8 @@ class DepartmentMember extends BasicApi
         }
     }
 
+
+
     /**
      * @throws DbException
      */
@@ -74,18 +76,18 @@ class DepartmentMember extends BasicApi
         $keyword = trim(Request::post('keyword'));
         $department_code = Request::post('departmentCode', '');
 
-        $orgCode = getCurrentOrganizationCode();
+//        $orgCode = getCurrentOrganizationCode();
         if (!$keyword && !$department_code) {
             $this->success('');
         }
         if ($department_code) {//添加部门成员
-            $departmentMemberIds = $this->model->where([['organization_code', '=', $orgCode], ['department_code', '=', $department_code]])->column('account_code');
+            $departmentMemberIds = $this->model->where([['department_code', '=', $department_code]])->column('account_code');
         } else {
             //添加组织成员
-            $departmentMemberIds = MemberAccount::where([['organization_code', '=', $orgCode]])->column('member_code');
+//            $departmentMemberIds = MemberAccount::where([['organization_code', '=', $orgCode]])->column('member_code');
         }
         //从当前组织的所有成员查询，判断是否已加入该组织/部门，并存储已加入组织/部门的成员的account_code
-        $memberAccountList = MemberAccount::where([['name', 'like', "%{$keyword}%"], ['organization_code', '=', $orgCode], ['status', '=', 1]])->select()->toArray();
+        $memberAccountList = MemberAccount::where([['name', 'like', "%{$keyword}%"], ['status', '=', 1]])->select()->toArray();
         $tempList = [];
         if ($memberAccountList) {
             foreach ($memberAccountList as $member) {

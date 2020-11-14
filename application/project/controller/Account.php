@@ -35,9 +35,11 @@ class Account extends BasicApi
      */
     public function index()
     {
-        $currentOrganizationCode = getCurrentOrganizationCode();
-        $where = [['organization_code', '=', $currentOrganizationCode]];
+//        $currentOrganizationCode = getCurrentOrganizationCode();
+//        $where = [['organization_code', '=', $currentOrganizationCode]];
         //        $where = [['organization_code', '=', $currentOrganizationCode], ['is_owner', '=', 0]];
+
+        $where = [];
         $params = Request::only('account,mobile,email,searchType,keyword');
         $departmentCode = Request::param('departmentCode');
         if (isset($params['keyword']) && $params['keyword']) {
@@ -73,13 +75,15 @@ class Account extends BasicApi
         }
         $list = $this->model->_list($where, 'id asc');
         if ($list['list']) {
-            $organizaionCode = getCurrentOrganizationCode();
+//            $organizaionCode = getCurrentOrganizationCode();
             foreach ($list['list'] as &$item) {
                 $memberInfo = Member::where(['code' => $item['member_code']])->field('id', true)->find();
                 if ($memberInfo) {
                     $item['avatar'] = $memberInfo['avatar'];
                 }
-                $memberAccount = MemberAccount::where(['member_code' => $memberInfo['code'], 'organization_code' => $organizaionCode])->field('code,status,authorize')->find();
+
+//                $memberAccount = MemberAccount::where(['member_code' => $memberInfo['code'], 'organization_code' => $organizaionCode])->field('code,status,authorize')->find();
+                $memberAccount = MemberAccount::where(['member_code' => $memberInfo['code']])->field('code,status,authorize')->find();
                 $item['membar_account_code'] = $memberAccount ? $memberAccount['code'] : '';
                 $departments = [];
                 $departmentCodes = $item['department_code'];
@@ -94,7 +98,83 @@ class Account extends BasicApi
             }
             unset($item);
         }
-        $list['authList'] = ProjectAuth::where(['status' => '1', 'organization_code' => $currentOrganizationCode])->select();
+//        $list['authList'] = ProjectAuth::where(['status' => '1', 'organization_code' => $currentOrganizationCode])->select();
+        $list['authList'] = ProjectAuth::where(['status' => '1'])->select();
+        $this->success('', $list);
+    }
+
+
+    /**
+     * 账户列表
+     * @return array|string
+     * @throws DbException
+     */
+    public function list()
+    {
+        $where = [];
+        $params = Request::only('member,mobile,email,searchType,keyword');
+        $departmentId = Request::param('departmentId');
+//        if (isset($params['keyword']) && $params['keyword']) {
+//            $where[] = ['name', 'like', "%{$params['keyword']}%"];
+//        }
+//        if (isset($params['searchType'])) {
+//            $searchType = $params['searchType'];
+//            switch ($searchType) {
+//                case 1:
+//                    $where[] = ['status', '=', 1];
+//                    break;
+//                case 2:
+//                    $where[] = ['department_code', '=', ''];
+//                    break;
+//                case 3:
+//                    $where[] = ['status', '=', 0];
+//                    break;
+//                case 4:
+//                    $where[] = ['status', '=', 1];
+//                    $where[] = ['department_id', '=', $departmentId];
+//                    break;
+//                default:
+//                    $where[] = ['status', '=', 1];
+//
+//            }
+//        }
+//        foreach (['member', 'mobile', 'email'] as $key) {
+//            (isset($params[$key]) && $params[$key] !== '') && $where[] = [$key, 'like', "%{$params[$key]}%"];
+//        }
+//        if (isset($params['date']) && $params['date'] !== '') {
+//            list($start, $end) = explode('~', $params['date']);
+//            $where[] = ['last_login_time', 'between', ["{$start} 00:00:00", "{$end} 23:59:59"]];
+//        }
+
+        $departmentMember = new \app\common\Model\DepartmentMember();
+        $list['list'] = $departmentMember->select();
+        if ($list['list']) {
+            foreach ($list['list'] as &$item) {
+//                $memberInfo = Member::where(['code' => $item['member_code']])->field('id', true)->find();
+//                if ($memberInfo) {
+//                    $item['avatar'] = $memberInfo['avatar'];
+//                }
+
+                $item['avatar'] = $item->member->avatar;
+
+//                $memberAccount = MemberAccount::where(['member_code' => $memberInfo['code'], 'organization_code' => $organizaionCode])->field('code,status,authorize')->find();
+//                $memberAccount = MemberAccount::where(['member_code' => $memberInfo['code']])->field('code,status,authorize')->find();
+//                $item['membar_account_code'] = $memberAccount ? $memberAccount['code'] : '';
+//                $departments = [];
+//                $departmentCodes = $item['department_code'];
+//                if ($departmentCodes) {
+//                    $departmentCodes = explode(',', $departmentCodes);
+//                    foreach ($departmentCodes as $departmentCode) {
+//                        $department = \app\common\Model\Department::where(['code' => $departmentCode])->field('name')->find();
+//                        $departments[] = $department['name'];
+//                    }
+//                }
+//                $item['departments'] = $departments ? implode(',', $departments) : '';
+            }
+            unset($item);
+        }
+//        $list['authList'] = ProjectAuth::where(['status' => '1', 'organization_code' => $currentOrganizationCode])->select();
+        $list['authList'] = ProjectAuth::where(['status' => '1'])->select();
         $this->success('', $list);
     }
 

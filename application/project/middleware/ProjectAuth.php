@@ -85,18 +85,18 @@ class ProjectAuth
             }
         }
         //只读权限
-        if (in_array($node, $this->needVisibleActions)) {
-            $code = $this->getCode();
-            if ($code) {
-                $info = Project::where(['code' => $code])->field('private')->find();
-                if ($info['private']) {
-                    $result = $this->checkAuth($code);
-                    if (!$result) {
-                        return json(['code' => 4031, 'msg' => '无权限操作资源，访问被拒绝']);
-                    }
-                }
-            }
-        }
+//        if (in_array($node, $this->needVisibleActions)) {
+//            $code = $this->getCode();
+//            if ($code) {
+//                $info = Project::where(['code' => $code])->field('private')->find();
+//                if ($info['private']) {
+//                    $result = $this->checkAuth($code);
+//                    if (!$result) {
+//                        return json(['code' => 4031, 'msg' => '无权限操作资源，访问被拒绝']);
+//                    }
+//                }
+//            }
+//        }
         return $next($request);
     }
 

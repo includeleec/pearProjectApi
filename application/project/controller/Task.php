@@ -70,7 +70,7 @@ class Task extends BasicApi
     }
 
     /**
-     * 获取自己的任务
+     * 获取用户的任务
      * @throws DataNotFoundException
      * @throws ModelNotFoundException
      * @throws DbException
@@ -79,11 +79,11 @@ class Task extends BasicApi
     {
         $taskType = Request::post('taskType', 1);
         $type = Request::post('type', 0);
-        $memberCode = Request::post('memberCode', '');
-        if (!$memberCode) {
+        $memberId = Request::post('memberId', '');
+        if (!$memberId) {
             $member = getCurrentMember();
         } else {
-            $member = Member::where(['code' => $memberCode])->find();
+            $member = Member::where(['id' => $memberId])->find();
         }
         $done = 1;
         if (!$type) {
@@ -101,6 +101,8 @@ class Task extends BasicApi
         }
         $this->success('', $list);
     }
+
+
 
     public function taskSources()
     {
