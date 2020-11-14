@@ -96,6 +96,11 @@ class NodeService
         $currentNode = self::parseNodeStr("{$module}/{$controller}") . strtolower("/{$action}");
         $member = getCurrentMember();
         if ($moduleApp == 'project') {
+
+            if ($member['is_admin'] == 1) {
+                return true;
+            }
+
             //拥有者账号不加入权限判断
             if ($member['is_owner'] == 1) {
                 return true;

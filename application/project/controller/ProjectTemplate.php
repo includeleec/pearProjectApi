@@ -30,17 +30,17 @@ class ProjectTemplate extends BasicApi
         $prefix = config('database.prefix');
         $page = Request::param('page', 1);
         $pageSize = Request::param('pageSize', cookie('pageSize'));
-        $orgCode = getCurrentOrganizationCode();
+//        $orgCode = getCurrentOrganizationCode();
         $sql = '';
         $viewType = Request::post('viewType', -1);
         if ($viewType == -1) {
-            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' or pt.is_system = 1 and pt.is_use = 1";
+            $sql = "select * from {$prefix}project_template as pt where pt.is_system = 1 and pt.is_use = 1";
         }
         if ($viewType == 1) {
             $sql = "select * from {$prefix}project_template as pt where pt.is_system = 1 and pt.is_use = 1";
         }
         if ($viewType == 0) {
-            $sql = "select * from {$prefix}project_template as pt where pt.organization_code = '{$orgCode}' and pt.is_system = 0 and pt.is_use = 1";
+            $sql = "select * from {$prefix}project_template as pt where pt.is_system = 0 and pt.is_use = 1";
         }
         $list = CommonModel::limitByQuery($sql, $page, $pageSize);
         if ($list['list']) {

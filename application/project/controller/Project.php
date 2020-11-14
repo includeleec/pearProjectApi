@@ -34,7 +34,10 @@ class Project extends BasicApi
     // 项目列表
     public function index()
     {
-        $selectBy = Request::post('selectBy', 'all');
+        $selectBy = Request::param('selectBy', 'all');
+        $page = Request::param('page', 1);
+        $pageSize = Request::param('pageSize', 10);
+
         switch ($selectBy) {
             case 'my':
                 $deleted = 0;
@@ -63,11 +66,13 @@ class Project extends BasicApi
 
         }
 
-        if($selectBy === 'all') {
-            $list = $this->model->getProjects($deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
-        } else {
-            $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
-        }
+//        if ($selectBy === 'all') {
+//            $list = $this->model->getProjects($deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+//        } else {
+//            $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
+//        }
+
+        $list['list'] = $this->model->page($page, $pageSize)->order('id','desc')->select();
 
         $status = [1 => '正常', 2 => '滞后'];
 
@@ -85,19 +90,17 @@ class Project extends BasicApi
                 $item['owner_name'] = $owner['name'];
                 $item['statusText'] = $status[$item['status']];
 
-                //项目负责人
-                $belong_member = Member::where(['code' => $item['belong_member_code']])->find();
+                // 当前任务阶段
+                $item['current_task_stage'] = $item->currentTaskStage;
 
-                if ($belong_member) {
-                    $item['belong_member'] = $belong_member;
-                }
+                //项目负责人
+                $item['belong_member'] = $item->belongMember;
 
                 //负责部门
-                $belong_dep = Department::where(['code' => $item['belong_dep_code']])->find();
+                $item['belong_department'] = $item->belongDepartment;
 
-                if ($belong_dep) {
-                    $item['belong_dep'] = $belong_dep;
-                }
+                //项目合同
+                $item['contract'] = $item->contract;
 
             }
             unset($item);
@@ -185,11 +188,11 @@ class Project extends BasicApi
         $archive = Request::param('archive', 0);
         $delete = Request::param('delete');
         $organizationCode = Request::param('organizationCode', '');
-        $memberCode = Request::post('memberCode', '');
-        if (!$memberCode) {
+        $memberId = Request::post('memberId', '');
+        if (!$memberId) {
             $member = getCurrentMember();
         } else {
-            $member = Member::where(['code' => $memberCode])->find();
+            $member = Member::where(['id' => $memberId])->find();
         }
         if (!$member) {
             $this->error("参数有误");
@@ -198,7 +201,8 @@ class Project extends BasicApi
         if (!$type) {
             $deleted = 0;
         }
-        $list = $this->model->getMemberProjects($member['code'], $organizationCode ?? getCurrentOrganizationCode(), $deleted, $archive, -1, Request::post('page'), Request::post('pageSize'));
+        $list = $this->model->getMemberProjects($member['code'], '', $deleted, $archive, -1, Request::post('page'), Request::post('pageSize'));
+
         $status = [1 => '正常', 2 => '滞后'];
 
         if ($list['list']) {
@@ -278,26 +282,17 @@ class Project extends BasicApi
             }
         }
 
-        // 合同信息
-        $contract = Contract::where(['project_code' => $project['code']])->find();
-
-        if ($contract) {
-            $project['contract'] = $contract;
-        }
 
         //项目负责人
-        $belong_member = Member::where(['code' => $project['belong_member_code']])->find();
+        $project['belong_member'] = $project->belongMember;
 
-        if ($belong_member) {
-            $project['belong_member'] = $belong_member;
-        }
 
         //负责部门
-        $belong_dep = Department::where(['code' => $project['belong_dep_code']])->find();
+        $project['belong_department'] = $project->belongDepartment;
 
-        if ($belong_dep) {
-            $project['belong_dep'] = $belong_dep;
-        }
+        //项目合同
+        $project['contract'] = $project->contract;
+
 
         $this->success('', $project);
     }
@@ -311,7 +306,10 @@ class Project extends BasicApi
      */
     public function edit(Request $request)
     {
-        $data = $request::only('name,description,cover,private,prefix,open_prefix,schedule,open_begin_time,open_task_private,task_board_theme,begin_time,end_time,auto_update_schedule,excel_id,set_up_year,belong_dep_code,belong_member_code,apply_set_up_date,annual_assignment_date,annual_assignment_batch,bidding_plan_submission_date,bidding_code,bidding_batch,bidding_amount,bidding_evaluation_date,winning_bid_accept_date,winning_bid_name,status');
+        $data = $request::only('name,description,cover,private,prefix,open_prefix,schedule,
+        open_begin_time,open_task_private,task_board_theme,begin_time,end_time,auto_update_schedule,excel_id,set_up_year,belong_department_id,belong_member_id,
+        apply_set_up_date,annual_assignment_date,annual_assignment_batch,
+        bidding_plan_submission_date,bidding_code,bidding_batch,bidding_amount,bidding_evaluation_date,winning_bid_accept_date,winning_bid_name,status');
         $code = $request::param('projectCode');
         try {
             $result = $this->model->edit($code, $data);
