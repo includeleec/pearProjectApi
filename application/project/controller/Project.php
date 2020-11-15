@@ -72,7 +72,7 @@ class Project extends BasicApi
 //            $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
 //        }
 
-        $list['list'] = $this->model->page($page, $pageSize)->order('id','desc')->select();
+        $list['list'] = $this->model->page($page, $pageSize)->order('id', 'desc')->select();
 
         $status = [1 => '正常', 2 => '滞后'];
 
@@ -249,6 +249,47 @@ class Project extends BasicApi
         }
         $this->error("操作失败，请稍候再试！");
     }
+
+
+    /**
+     * 设为项目负责人
+     * @param Request $request
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
+     */
+    public function setBelongMember(Request $request)
+    {
+        $code = $request::param('code');
+        $belong_member_id = $request::param('belong_member_id');
+
+        if (!$code) {
+            $this->error('请填写项目code');
+        }
+
+        if (!$belong_member_id) {
+            $this->error('请填写项目负责人id');
+        }
+        $project = $this->model->where('code', $code)->field('id', true)->find();
+
+        if (!$project) {
+            $this->notFound();
+        }
+
+        $member = Member::get($belong_member_id);
+        if (!$member) {
+            $this->error('用户id不存在');
+        }
+
+        $project->belong_member_id = $member['id'];
+        $result = $project->save();
+        if ($result) {
+            $this->success('更新负责人成功');
+        }
+
+
+    }
+
 
     /**
      * 获取单个项目信息
