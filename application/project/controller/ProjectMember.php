@@ -5,6 +5,7 @@ namespace app\project\controller;
 use app\common\Model\InviteLink;
 use app\common\Model\Member;
 use app\common\Model\MemberAccount;
+use app\common\Model\Project;
 use app\common\Model\Organization;
 use controller\BasicApi;
 use think\facade\Request;
@@ -28,19 +29,68 @@ class ProjectMember extends BasicApi
     public function index()
     {
         $project_code = Request::post('projectCode');
+        $project = Project::where('code', $project_code)->find();
+        if(!$project) {
+            $this->error('项目 code 不存在');
+        }
+
         $where = [];
         $where[] = ['project_code', '=', $project_code];
         $list = $this->model->_list($where, 'is_owner desc');
         if ($list['list']) {
             foreach ($list['list'] as &$item) {
-                $member = Member::where(['code' => $item['member_code']])->field('name,avatar,code,email')->find();
+                $member = Member::where(['code' => $item['member_code']])->field('id,name,avatar,code,email')->find();
                 !$member && $member = [];
                 $member['is_owner'] = $item['is_owner'];
+                // check 是否 该项目负责人
+                if($project['belong_member_id'] == $member['id']) {
+                    $member['belong_member'] = true;
+                } else {
+                    $member['belong_member'] = false;
+                }
+
+
                 $item = $member;
             }
         }
         $this->success('', $list);
     }
+
+    // 展示能够邀请的用户列表
+    public function listForInvite()
+    {
+        $code = trim(Request::post('projectCode'));
+        if (!$code) {
+            $this->error('请先选择项目');
+        }
+//        $orgCode = getCurrentOrganizationCode();
+//        $memberAccountList = MemberAccount::where([['organization_code', '=', $orgCode]])->select()->toArray();
+
+        // get all members
+        $memberList = Member::select();
+
+        $list = [];
+        if ($memberList) {
+            foreach ($memberList as $member) {
+                $has = $this->model->where('member_code', $member['code'])->where('project_code', $code)->field('id')->find();
+                $item['memberCode'] = $member['code'];
+                $item['status'] = $member['status'];
+                $item['avatar'] = $member['avatar'];
+                $item['name'] = $member['name'];
+                $item['email'] = $member['email'] ?? '未绑定邮箱';
+                $item['joined'] = false;
+                if ($has) {
+                    $item['joined'] = true;
+//                    $item['avatar'] = $has['avatar'];
+//                    $item['name'] = $has['name'];
+                }
+                $list[] = $item; //为了去重
+            }
+        }
+        $this->success('', $list);//数组下标重置
+    }
+
+
 
     public function _listForInvite()
     {
