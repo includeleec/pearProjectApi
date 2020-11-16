@@ -37,7 +37,6 @@ class TaskStages extends BasicApi
 
         if ($list['list']) {
             foreach ($list['list'] as &$item) {
-                unset($item['id']);
                 $item['statusText'] = $status[$item['status']];
                 $item['tasksLoading'] = true; //任务加载状态
                 $item['fixedCreator'] = false; //添加任务按钮定位
