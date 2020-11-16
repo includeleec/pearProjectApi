@@ -39,31 +39,57 @@ class Project extends BasicApi
         $page = Request::param('page', 1);
         $pageSize = Request::param('pageSize', 10);
 
+        $where = [];
+
         switch ($selectBy) {
+            // 我负责的项目
             case 'my':
                 $deleted = 0;
-                $archive = -1;
-                $collection = -1;
+                $archive = 0;
+
+                $where = [
+                    ['archive', '=', $archive],
+                    ['deleted', '=', $deleted]
+                ];
+
+
                 break;
+
+            // 我收藏的项目
             case 'collect':
                 $deleted = 0;
                 $archive = -1;
                 $collection = 1;
                 break;
+            // 已归档
             case 'archive':
                 $deleted = 0;
                 $archive = 1;
                 $collection = -1;
+
+                $where = [
+                    ['archive', '=', $archive],
+                    ['deleted', '=', $deleted]
+                ];
+
                 break;
+            // 已删除
             case 'deleted':
                 $deleted = 1;
-                $archive = -1;
-                $collection = -1;
+                $where = [
+                    ['deleted', '=', $deleted]
+                ];
                 break;
+            // all
             default:
                 $deleted = 0;
-                $archive = -1;
+                $archive = 0;
                 $collection = -1;
+
+                $where = [
+                    ['archive', '=', $archive],
+                    ['deleted', '=', $deleted]
+                ];
 
         }
 
@@ -73,7 +99,23 @@ class Project extends BasicApi
 //            $list = $this->model->getMemberProjects(getCurrentMember()['code'], getCurrentOrganizationCode(), $deleted, $archive, $collection, Request::post('page'), Request::post('pageSize'));
 //        }
 
-        $list['list'] = $this->model->page($page, $pageSize)->order('id', 'desc')->select();
+        $currMember = getCurrentMember();
+        $member = Member::get($currMember['id']);
+
+        if($selectBy === 'my') {
+
+
+
+            $list['list'] = $member->belongsProject()->where($where)->page($page, $pageSize)->order('id', 'asc')->select();
+        } else if($selectBy === 'collect') {
+
+            $list['list'] = $member->collectProject()->select();
+            $this->success('', $list);
+
+
+        } else {
+            $list['list'] = $this->model->where($where)->page($page, $pageSize)->order('id', 'asc')->select();
+        }
 
         $status = [1 => '正常', 2 => '滞后'];
 
@@ -320,7 +362,7 @@ class Project extends BasicApi
             $this->error('项目阶段不存在');
         }
 
-        if($taskStage->project->code != $project['code']) {
+        if ($taskStage->project->code != $project['code']) {
             $this->error('项目阶段id 与项目id 对应关系不存在');
         }
 

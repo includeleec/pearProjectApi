@@ -25,6 +25,19 @@ class Member extends CommonModel
         return $this->belongsTo('Department');
     }
 
+    // 负责的项目
+    public function belongsProject()
+    {
+        return $this->hasMany('Project','belong_member_id','id');
+    }
+
+
+    // 收藏的项目
+    public function collectProject()
+    {
+        return $this->belongsToMany('Project','project_collection','project_code','project_code');
+    }
+
 
     public static function login($member)
     {
@@ -256,11 +269,9 @@ class Member extends CommonModel
     }
 
 
-
     /**
      * @param $memberId 成员 id
      * @param $departmentId 部门 id
-
      * @return DepartmentMember|MemberAccount
      * @throws DataNotFoundException
      * @throws ModelNotFoundException
