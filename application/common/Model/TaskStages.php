@@ -16,6 +16,11 @@ class TaskStages extends CommonModel
     protected $append = ['status_text'];
 
 
+    // 对应的project
+    public function project() {
+        return $this->belongsTo('Project');
+    }
+
     public function getStatusTextAttr($value,$data)
     {
         $status = [1=>'正常',2=>'滞后'];

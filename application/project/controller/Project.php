@@ -9,6 +9,7 @@ use app\common\Model\ProjectCollection;
 use app\common\Model\ProjectLog;
 use app\common\Model\ProjectMember;
 use app\common\Model\ProjectReport;
+use app\common\Model\TaskStages;
 use controller\BasicApi;
 use service\DateService;
 use think\Db;
@@ -286,8 +287,48 @@ class Project extends BasicApi
         if ($result) {
             $this->success('更新负责人成功');
         }
+    }
 
 
+    /**
+     * 设为当前执行阶段
+     * @param Request $request
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
+     */
+    public function setCurrentTaskStage(Request $request)
+    {
+        $code = $request::param('code');
+        $current_task_stage_id = $request::param('current_task_stage_id');
+
+        if (!$code) {
+            $this->error('请填写项目code');
+        }
+
+        if (!$current_task_stage_id) {
+            $this->error('请填写当前执行阶段id');
+        }
+        $project = $this->model->where('code', $code)->field('id', true)->find();
+
+        if (!$project) {
+            $this->error('项目不存在');
+        }
+
+        $taskStage = TaskStages::get($current_task_stage_id);
+        if (!$taskStage) {
+            $this->error('项目阶段不存在');
+        }
+
+        if($taskStage->project->code != $project['code']) {
+            $this->error('项目阶段id 与项目id 对应关系不存在');
+        }
+
+        $project->current_task_stage_id = $taskStage['id'];
+        $result = $project->save();
+        if ($result) {
+            $this->success('更新当前项目阶段成功');
+        }
     }
 
 
@@ -302,7 +343,7 @@ class Project extends BasicApi
     {
         $project = $this->model->where(['code' => $request::post('projectCode')])->field('id', true)->find();
         if (!$project) {
-            $this->notFound();
+            $this->error('项目不存在');
         }
         $project['collected'] = 0;
         $collected = ProjectCollection::where(['project_code' => $project['code'], 'member_code' => getCurrentMember()['code']])->field('id')->find();
@@ -322,6 +363,9 @@ class Project extends BasicApi
                 $project['owner_avatar'] = $member['avatar'];
             }
         }
+
+        // 当前任务阶段
+        $item['current_task_stage'] = $project->currentTaskStage;
 
 
         //项目负责人
@@ -350,7 +394,7 @@ class Project extends BasicApi
         $data = $request::only('name,description,cover,private,prefix,open_prefix,schedule,
         open_begin_time,open_task_private,task_board_theme,begin_time,end_time,auto_update_schedule,excel_id,set_up_year,belong_department_id,belong_member_id,
         apply_set_up_date,annual_assignment_date,annual_assignment_batch,
-        bidding_plan_submission_date,bidding_code,bidding_batch,bidding_amount,bidding_evaluation_date,winning_bid_accept_date,winning_bid_name,status');
+        bidding_plan_submission_date,bidding_code,bidding_batch,bidding_amount,bidding_evaluation_date,winning_bid_accept_date,winning_bid_name,status,current_task_stage_id');
         $code = $request::param('projectCode');
         try {
             $result = $this->model->edit($code, $data);

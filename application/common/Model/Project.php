@@ -137,6 +137,7 @@ class Project extends CommonModel
             if ($stages) {
                 foreach ($stages as $key => $stage) {
                     $taskStage = [
+                        'project_id' => $result['id'],
                         'project_code' => $project['code'],
                         'name' => $stage['name'],
                         'sort' => $key,
