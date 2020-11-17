@@ -25,10 +25,10 @@ class PayPlan extends BasicApi
      */
     public function save(Request $request)
     {
-        $data = $request::only('task_stage_code,type,pay_date,pay_amount,remark');
+        $data = $request::only('task_stage_id,type,pay_date,pay_amount,remark');
 
-        if (!$data['task_stage_code']) {
-            $this->error("task_stage_code is required");
+        if (!$data['task_stage_id']) {
+            $this->error("task_stage_id is required");
         }
 
         if (!$data['type']) {
@@ -56,31 +56,39 @@ class PayPlan extends BasicApi
      */
     public function edit(Request $request)
     {
-        $data = $request::only('code,type,pay_date,pay_amount,remark');
+        $data = $request::only('task_stage_id,type,pay_date,pay_amount,remark');
 
-        if (!$request::post('code')) {
-            $this->error("code is required");
+//        if (!$request::post('id')) {
+//            $this->error("id is required");
+//        }
+
+        if (!$data['task_stage_id']) {
+            $this->error("task_stage_id is required");
         }
 
         if (!$request::post('type')) {
             $this->error("type is required");
         }
 
-        $pay_plan = $this->model->where(['code' => $data['code']])->field('code')->find();
+        $pay_plan = $this->model->where(['task_stage_id' => $data['task_stage_id']])->find();
+
 
         if (!$pay_plan) {
-            $this->error("pay plan is not exist");
+            // 不存在，创建新的支付计划
+            $result = $this->model->createPayPlan($data);
+            if($result) {
+                $this->success('创建支付计划成功', $result);
+            }
+
+        } else {
+            // 已存在，更新
+            $result = $pay_plan->save($data);
+            if($result) {
+                $this->success('修改支付计划成功', $result);
+            }
+
         }
 
-        try {
-            $result = $this->model->updatePayPlan($data['code'], $data);
-        } catch (\Exception $e) {
-            $this->error($e->getMessage(), $e->getCode());
-        }
-        if ($result) {
-            $this->success('修改成功', $result);
-        }
-        $this->error("操作失败，请稍候再试！");
 
     }
 
@@ -90,17 +98,27 @@ class PayPlan extends BasicApi
      */
     public function remove()
     {
-        $code = Request::post('code');
-        if (!$code) {
-            $this->error("请选择一个支付计划");
+        $task_stage_id = Request::post('task_stage_id');
+        if (!$task_stage_id) {
+            $this->error("请输入task_stage_id");
         }
+
+        $pay_plan = $this->model->where(['task_stage_id' => $task_stage_id])->find();
+
+        if(!$pay_plan) {
+            $this->error("task_stage_id 对应支付计划不存在");
+        }
+
+
         try {
-            $result = $this->model->deletePayPlan($code);
+//            $result = $this->model->deletePayPlan($pay_plan['id']);
+            $result = $pay_plan->delete();
         } catch (\Exception $e) {
             $this->error($e->getMessage(), $e->getCode());
         }
+
         if ($result) {
-            $this->success('');
+            $this->success('删除支付计划成功');
         }
     }
 }
