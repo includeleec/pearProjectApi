@@ -21,6 +21,11 @@ class TaskStages extends CommonModel
         return $this->belongsTo('Project');
     }
 
+    // 对应的 支付计划
+    public function payPlan() {
+        return $this->hasOne('PayPlan','task_stage_id');
+    }
+
     public function getStatusTextAttr($value,$data)
     {
         $status = [1=>'正常',2=>'滞后'];

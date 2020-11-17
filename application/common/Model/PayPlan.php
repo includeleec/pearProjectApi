@@ -15,34 +15,42 @@ use think\exception\DbException;
  */
 class PayPlan extends CommonModel
 {
-    protected $append = [];
+    protected $append = ['type_text'];
+
+
+    // 支付计划类型
+    public function getTypeTextAttr($value,$data)
+    {
+        $status = [1=>'首款',2=>'进度款1',3=>'进度款2',4=>'尾款',5=>'质保金'];
+        return $status[$data['type']];
+    }
 
     public function createPayPlan($data)
     {
 
         try {
 
-            if (!$data['task_stage_code']) {
-                throw new \Exception('task_stage_code required', 1);
+            if (!$data['task_stage_id']) {
+                throw new \Exception('task_stage_id required', 1);
             }
 
             if (!$data['type']) {
                 throw new \Exception('type required', 1);
             }
 
-            $stage = TaskStages::where(['code' => $data['task_stage_code']])->field('code')->find();
+            $stage = TaskStages::where(['id' => $data['task_stage_id']])->field('id')->find();
             if (!$stage) {
-                throw new \Exception('找不到对应的任务列表 task stage code', 2);
+                throw new \Exception('找不到对应的任务列表 task stage id', 2);
             }
 
-            $alreay_link_task_stage = self::where(['task_stage_code' => $data['task_stage_code']])->find();
+            $alreay_link_task_stage = self::where(['task_stage_id' => $data['task_stage_id']])->find();
 
             if ($alreay_link_task_stage) {
-                throw new \Exception('已经存在支付计划关联到 task_stage_code', 3);
+                throw new \Exception('已经存在支付计划关联到 task_stage_id', 3);
             }
 
             $data = [
-                'task_stage_code' => $data['task_stage_code'],
+                'task_stage_id' => $data['task_stage_id'],
                 'code' => createUniqueCode('payPlan'),
                 'type' => $data['type'],
                 'pay_date' => $data['pay_date'],
@@ -53,11 +61,10 @@ class PayPlan extends CommonModel
             $result = self::create($data);
 
             // $result = $data;
-
-            if ($result) {
-                unset($result['id']);
-
-            }
+//            if ($result) {
+//                unset($result['id']);
+//
+//            }
             return $result;
 
         } catch (\Exception $e) {
@@ -68,22 +75,22 @@ class PayPlan extends CommonModel
 
     /**
      * update pay plan
-     * @param $code
+     * @param $id
      * @return bool
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\ModelNotFoundException
      * @throws \think\exception\DbException
      */
-    public function updatePayPlan($code, $data)
+    public function updatePayPlan($id, $data)
     {
-        if (!$code) {
+        if (!$id) {
             throw new \Exception('请选择支付计划', 1);
         }
-        $item = self::where(['code' => $code])->field('id')->find();
+        $item = self::where(['id' => $id])->field('id')->find();
         if (!$item) {
             throw new \Exception('没有找到对应的支付计划', 1);
         }
-        $result = self::update($data, ['code' => $code]);
+        $result = self::update($data, ['id' => $id]);
         return $result;
     }
 
@@ -95,14 +102,14 @@ class PayPlan extends CommonModel
      * @throws \think\db\exception\ModelNotFoundException
      * @throws \think\exception\DbException
      */
-    public function deletePayPlan($code)
+    public function deletePayPlan($id)
     {
-        $stage = self::where(['code' => $code])->field('id')->find();
+        $stage = self::where(['id' => $id])->field('id')->find();
         if (!$stage) {
             throw new \Exception('pay plan is not exist', 1);
         }
 
-        $result = self::destroy(['code' => $code]);
+        $result = self::destroy(['id' => $id]);
 
         if (!$result) {
             throw new \Exception('删除失败', 3);

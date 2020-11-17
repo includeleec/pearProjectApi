@@ -44,7 +44,7 @@ class TaskStages extends BasicApi
                 $item['tasks'] = [];
                 $item['doneTasks'] = [];
                 $item['unDoneTasks'] = [];
-                $item['payPlan'] = PayPlan::where(['task_stage_code' => $item['code']])->find();
+                $item['payPlan'] = PayPlan::where(['task_stage_id' => $item['id']])->find();
             }
         }
         $this->success('', $list);
