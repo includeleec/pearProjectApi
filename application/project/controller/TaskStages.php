@@ -19,9 +19,7 @@ class TaskStages extends BasicApi
     }
 
     /**
-     * 显示资源列表
-     * @return void
-     * @throws \think\exception\DbException
+     * 获取项目的所有阶段
      */
     public function index()
     {
@@ -33,11 +31,12 @@ class TaskStages extends BasicApi
         $where[] = ['project_code', '=', $code];
         $list = $this->model->_list($where, 'sort asc,id asc');
 
-        $status = [1 => '正常', 2 => '滞后'];
+//        $status = [1 => '正常', 2 => '滞后'];
+        $now = date("Y-m-d h:i:s");
 
         if ($list['list']) {
             foreach ($list['list'] as &$item) {
-                $item['statusText'] = $status[$item['status']];
+//                $item['statusText'] = $status[$item['status']];
                 $item['tasksLoading'] = true; //任务加载状态
                 $item['fixedCreator'] = false; //添加任务按钮定位
                 $item['showTaskCard'] = false; //是否显示创建卡片
@@ -45,8 +44,65 @@ class TaskStages extends BasicApi
                 $item['doneTasks'] = [];
                 $item['unDoneTasks'] = [];
                 $item['payPlan'] = PayPlan::where(['task_stage_id' => $item['id']])->find();
+
+                // 该阶段是否滞后, default = false
+                $item['delay'] = false;
+                if($item['plan_date']) {
+                    // 当前时间 >= 计划时间
+                    if(strtotime($now) >= strtotime($item['plan_date'])) {
+                        // 如果没有设置实际执行时间 execute_time 判断为滞后
+                        if(!$item['execute_date']) {
+                            $item['delay'] = true;
+                        }
+                        $list['current_stage'] = $item;
+                    }
+                }
+
             }
         }
+        $this->success('', $list);
+    }
+
+    /**
+     * 根据当前系统时间，计算项目所处阶段, 各阶段的是否滞后
+     */
+    public function calProject()
+    {
+        $where = [];
+        $code = Request::post('projectCode');
+        if (!$code) {
+            $this->error("请选择一个项目");
+        }
+        $where[] = ['project_code', '=', $code];
+        $list = $this->model->_list($where, 'sort asc');
+
+        $now = date("Y-m-d h:i:s");
+
+        if ($list['list']) {
+            foreach ($list['list'] as &$item) {
+                // unset status
+                unset($item['status']);
+
+                // 该阶段是否滞后, default = false
+                $item['delay'] = false;
+
+                if($item['plan_date']) {
+
+                    // 当前时间 >= 计划时间
+                    if(strtotime($now) >= strtotime($item['plan_date'])) {
+                        // 如果没有设置实际执行时间 execute_time 判断为滞后
+                        if(!$item['execute_date']) {
+                            $item['delay'] = true;
+                        }
+                        $list['current_stage'] = $item;
+                    }
+
+                }
+            }
+        }
+
+        $list['now'] = $now;
+
         $this->success('', $list);
     }
 
