@@ -157,6 +157,102 @@ class Project extends CommonModel
         return $result;
     }
 
+    /**
+     * 创建项目
+     */
+    public function createProjectFromAPI($member, $data)
+    {
+        Db::startTrans();
+        try {
+
+            $project = [
+                'create_time' => nowTime(),
+                'code' => createUniqueCode('project'),
+                'name' => $data['name'],
+                'belong_member_id' => $member['id'],
+                'belong_department_id' => $member['department_id'],
+                'description' => '',
+                'task_board_theme' => 'simple',
+                'set_up_year' => $data['set_up_year'],
+                'apply_set_up_date' => returnValidDatetime($data['apply_set_up_date']),
+                'annual_assignment_date' => $data['annual_assignment_date'],
+                'annual_assignment_batch' => $data['annual_assignment_batch'],
+                'bidding_plan_submission_date'=> $data['bidding_plan_submission_date'],
+                'bidding_no' => $data['bidding_no'],
+                'bidding_batch' => $data['bidding_batch'],
+                'bidding_amount' => $data['bidding_amount'],
+                'bidding_evaluation_date' => $data['bidding_evaluation_date'],
+                'winning_bid_accept_date' => $data['winning_bid_accept_date'],
+                'winning_bid_name' => $data['winning_bid_name']
+
+            ];
+
+
+            $result = self::create($project);
+
+            $contract = [
+                'name' => $data['contract_name'],
+                'code' => $data['contract_code'],
+                'assign_date' => $data['contract_assign_date'],
+                'performance_start_date' => $data['contract_performance_start_date'],
+                'performance_end_date' => $data['contract_performance_end_date'],
+                'amount' => $data['contract_amount'],
+                'warranty_amount' => $data['contract_warranty_amount'],
+                'warranty_date' => $data['contract_warranty_date'],
+                'contact_name' => $data['contract_contact_name'],
+                'contact_mobile' => $data['contract_contact_mobile'],
+                'project_id' => $result['id']
+
+            ];
+
+            Contract::create($contract);
+
+
+            $projectMemberModel = new ProjectMember();
+            $projectMemberModel->inviteMember($member['code'], $project['code'], 1);
+            if ($data['project_template_code']) {
+                $stages = TaskStagesTemplate::where(['project_template_code' => $data['project_template_code']])->order('sort desc,id asc')->select();
+
+                if ($stages) {
+                    foreach ($stages as $key => $stage) {
+                        // 初始化 计划时间，实际执行时间
+                        $plan_date = null;
+                        $execute_date = null;
+                        foreach ($data['task_stages'] as $ts) {
+
+                            // 查找到匹配的阶段名称
+                            if($ts['name'] == $stage['name']) {
+                                $plan_date = returnValidDatetime($ts['plan_date']);
+                                $execute_date = returnValidDatetime($ts['execute_date']);
+                            }
+                        }
+
+                        $taskStage = [
+                            'project_id' => $result['id'],
+                            'project_code' => $project['code'],
+                            'name' => $stage['name'],
+                            'sort' => $key,
+                            'code' => createUniqueCode('taskStages'),
+                            'create_time' => nowTime(),
+                            'plan_date'=> $plan_date,
+                            'execute_date' => $execute_date
+
+                        ];
+                        $stagesResult = TaskStages::create($taskStage);
+                        $taskStage['id'] = $stagesResult['id'];
+                    }
+                }
+            }
+
+            Db::commit();
+        } catch (\Exception $e) {
+            Db::rollback();
+            throw new \Exception($e->getMessage(), 1);
+        }
+        self::projectHook(getCurrentMember()['code'], $project['code'], 'create');
+        return $result;
+    }
+
     public function edit($code, $data)
     {
         if (!$code) {

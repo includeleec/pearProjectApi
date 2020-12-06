@@ -10,6 +10,7 @@ use app\common\Model\ProjectLog;
 use app\common\Model\ProjectMember;
 use app\common\Model\ProjectReport;
 use app\common\Model\TaskStages;
+use app\common\Model\ProjectTemplate;
 use controller\BasicApi;
 use service\DateService;
 use think\Db;
@@ -19,6 +20,7 @@ use think\Exception;
 use think\Exception\DbException;
 use think\facade\Request;
 use think\File;
+use think\facade\Validate;
 
 /**
  */
@@ -38,6 +40,7 @@ class Project extends BasicApi
         $selectBy = Request::param('selectBy', 'all');
         $page = Request::param('page', 1);
         $pageSize = Request::param('pageSize', 10);
+        $departmentId = Request::param('departmentId', 'all');
 
         $where = [];
 
@@ -102,16 +105,23 @@ class Project extends BasicApi
         $currMember = getCurrentMember();
         $member = Member::get($currMember['id']);
 
+        if($departmentId !== 'all') {
+            $department = Department::where('id', $departmentId)->find();
+            // 存在对应的查找部门
+            if($department) {
+                array_push($where,[
+                    'belong_department_id', '=', $departmentId
+                ]);
+            }
+        }
+
+
         if($selectBy === 'my') {
-
-
 
             $list['list'] = $member->belongsProject()->where($where)->page($page, $pageSize)->order('id', 'asc')->select();
         } else if($selectBy === 'collect') {
-
             $list['list'] = $member->collectProject()->select();
             $this->success('', $list);
-
 
         } else {
             $list['list'] = $this->model->where($where)->page($page, $pageSize)->order('id', 'asc')->select();
@@ -120,6 +130,7 @@ class Project extends BasicApi
         $status = [1 => '正常', 2 => '滞后'];
 
         if ($list['list']) {
+
             foreach ($list['list'] as $key => &$item) {
 
                 $item['owner_name'] = '-';
@@ -133,8 +144,44 @@ class Project extends BasicApi
                 $item['owner_name'] = $owner['name'];
                 $item['statusText'] = $status[$item['status']];
 
-                // 当前任务阶段
-                $item['current_task_stage'] = $item->currentTaskStage;
+                // 当前任务阶段(人工设置)
+                // $item['current_task_stage'] = $item->currentTaskStage;
+
+                $item['delay'] = false;
+
+                // 获取该项目所有阶段 list
+                $ts_list = TaskStages::where('project_code', $item['code'])->order('id', 'asc')->select();
+
+                $now = date("Y-m-d h:i:s");
+                // 遍历每个项目的所有阶段
+                if ($ts_list) {
+                    foreach ($ts_list as &$ts_item) {
+
+                        // unset status
+                        unset($ts_item['status']);
+
+                        // 该阶段是否滞后, default = false
+                        $ts_item['delay'] = false;
+
+                        if($ts_item['plan_date']) {
+                            // 当前时间 >= 计划时间
+                            if(strtotime($now) >= strtotime($ts_item['plan_date'])) {
+                                // 如果没有设置实际执行时间 execute_time 判断为滞后
+                                if(!$ts_item['execute_date']) {
+                                    $ts_item['delay'] = true;
+                                    $item['delay'] = true;
+                                } else {
+                                    $item['delay'] = false;
+                                }
+                                // 项目的当前阶段(自动计算)
+                                $item['current_stage'] = $ts_item;
+                            }
+
+                        }
+                    }
+                }
+
+
 
                 //项目负责人
                 $item['belong_member'] = $item->belongMember;
@@ -147,6 +194,20 @@ class Project extends BasicApi
 
             }
             unset($item);
+
+            // total list count
+            $list['total'] = count($list['list']);
+
+            // 滞后的项目数量
+            $delay_project_count = 0;
+
+            foreach ($list['list'] as $item) {
+                if($item['delay']) {
+                    $delay_project_count++;
+                }
+            }
+
+            $list['delay_total'] = $delay_project_count;
         }
         $this->success('', $list);
     }
@@ -293,6 +354,64 @@ class Project extends BasicApi
         $this->error("操作失败，请稍候再试！");
     }
 
+    /**
+     * 新增项目
+     * - 项目基本信息
+     * - 设置项目合同信息
+     * - 选择项目模板, 创建 task stages
+     * - 设置每个阶段的 plan date, execute date
+     */
+
+    public function add_from_api(Request $request)
+    {
+        $data = Request::param();
+        $validate = Validate::make([
+            'belong_member_name' => 'require',
+            'name' => 'require',
+        ], [
+            'belong_member_name.require' => '负责人 name 不能为空！',
+            'name.require' => '项目名不能为空！',
+        ]);
+
+        $validate->check($data) || $this->error($validate->getError());
+
+//        $data['task_stages'] = json_decode($data['task_stages'], true);
+//        $this->success($data);
+
+        $member = Member::where(['name' => $data['belong_member_name']])->find();
+        if (!$member) {
+            $this->error('不存在的 member name');
+        }
+
+        // 检查同名项目是否已经存在
+        $project = $this->model->where('name', $data['name'])->find();
+        if($project) {
+            $this->success('同名项目已经存在');
+        }
+
+        # 找到对应的 project template
+        $project_template_name = '专项研究课题';
+        $project_template = ProjectTemplate::where('name',$project_template_name)->find();
+        if(!$project_template) {
+            $this->error('不存在的 project template:'.$project_template_name);
+        }
+
+        $data['project_template_code'] = $project_template['code'];
+
+        try {
+            $result = $this->model->createProjectFromAPI($member, $data);
+        } catch (\Exception $e) {
+            $this->error($e->getMessage(), $e->getCode());
+        }
+        if ($result) {
+            $this->success('', $result);
+        }
+        $this->error("操作失败，请稍候再试！");
+
+
+        $this->success('添加项目成功');
+    }
+
 
     /**
      * 设为项目负责人
@@ -407,7 +526,36 @@ class Project extends BasicApi
         }
 
         // 当前任务阶段
-        $item['current_task_stage'] = $project->currentTaskStage;
+//        $item['current_task_stage'] = $project->currentTaskStage;
+
+        // 获取该项目所有阶段 list
+        $ts_list = TaskStages::where('project_code', $project['code'])->order('id', 'asc')->select();
+
+        $now = date("Y-m-d h:i:s");
+
+        if ($ts_list) {
+            foreach ($ts_list as &$ts_item) {
+                // unset status
+                unset($ts_item['status']);
+
+                // 该阶段是否滞后, default = false
+                $ts_item['delay'] = false;
+
+                if($ts_item['plan_date']) {
+                    // 当前时间 >= 计划时间
+                    if(strtotime($now) >= strtotime($ts_item['plan_date'])) {
+                        // 如果没有设置实际执行时间 execute_time 判断为滞后
+                        if(!$ts_item['execute_date']) {
+                            $ts_item['delay'] = true;
+                        }
+                        // 项目的当前阶段(自动计算)
+                        $project['current_stage'] = $ts_item;
+                    }
+
+                }
+            }
+        }
+
 
 
         //项目负责人
