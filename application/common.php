@@ -197,6 +197,26 @@ function isOpenMailNoticePush()
 }
 
 /**
+ * 是否是合法的日期格式 string
+ * @param $dateString
+ * @return bool
+ */
+function isValidDatetime($dateString)
+{
+    return strtotime( date('Y-m-d H:i:s', strtotime($dateString)) ) === strtotime( $dateString );
+}
+
+/**
+ * 是否是合法的日期格式 string
+ * @param $dateString
+ * @return bool
+ */
+function returnValidDatetime($dateString)
+{
+    return isValidDatetime( $dateString ) ? $dateString : null;
+}
+
+/**
  * 日期格式标准输出
  * @param string $datetime 输入日期
  * @param string $format 输出格式
