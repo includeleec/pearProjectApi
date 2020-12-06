@@ -13,7 +13,7 @@ use think\File;
  */
 class TaskStages extends CommonModel
 {
-    protected $append = ['status_text'];
+//    protected $append = ['status_text'];
 
 
     // 对应的project
