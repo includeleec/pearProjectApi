@@ -64,7 +64,7 @@ class MemberAccount extends CommonModel
             'code' => createUniqueCode('memberAccount'),
             'member_code' => $memberCode,
             'organization_code' => $organizationCode,
-            'is_owner' => 0,
+            'is_owner' => 1,
             'authorize' => $authId,
             'status' => 1,
             'create_time' => nowTime(),
