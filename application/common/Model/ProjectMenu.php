@@ -84,6 +84,7 @@ class ProjectMenu extends CommonModel
         //主账号不做过滤
         $member = getCurrentMember();
         $menus = $member['is_owner'] ? $list : $this->filterMenu($list, $member['nodes']);
+//        $menus = $list;
         $new = [];
         $isTree && $menus = ToolsService::arr2tree($menus);
         $this->buildFilterMenuData($menus, $new);

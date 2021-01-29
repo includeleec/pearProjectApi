@@ -58,21 +58,21 @@ class Member extends CommonModel
             $list = MemberAccount::where(['member_code' => $member['code']])->order('id asc')->select()->toArray();
         }
 
-//        $organizationList = self::getOrgList($member['code'], true);
-//        if ($list) {
-//            foreach ($list as &$item) {
-//                $departments = [];
-//                $departmentCodes = $item['department_code'];
-//                if ($departmentCodes) {
-//                    $departmentCodes = explode(',', $departmentCodes);
-//                    foreach ($departmentCodes as $departmentCode) {
-//                        $department = Department::where(['code' => $departmentCode])->field('name')->find();
-//                        $departments[] = $department['name'];
-//                    }
-//                }
-//                $item['department'] = $departments ? implode(' - ', $departments) : '';
-//            }
-//        }
+        $organizationList = self::getOrgList($member['code'], true);
+        if ($list) {
+            foreach ($list as &$item) {
+                $departments = [];
+                $departmentCodes = $item['department_code'];
+                if ($departmentCodes) {
+                    $departmentCodes = explode(',', $departmentCodes);
+                    foreach ($departmentCodes as $departmentCode) {
+                        $department = Department::where(['code' => $departmentCode])->field('name')->find();
+                        $departments[] = $department['name'];
+                    }
+                }
+                $item['department'] = $departments ? implode(' - ', $departments) : '';
+            }
+        }
 //        $member['account_id'] = $list[0]['id'];
 //        $member['is_owner'] = $list[0]['is_owner'];
 //        $member['authorize'] = $list[0]['authorize'];
@@ -80,14 +80,21 @@ class Member extends CommonModel
 //        $member['department'] = $list[0]['department'];
 //        $member['organization_code'] = $list[0]['organization_code'];
 
+//        $member['account_id'] = $list[0]['id'];
+        $member['is_owner'] = 0;
+        $member['authorize'] = 1;
+//        $member['position'] = $list[0]['position'];
+        $member['department'] = '';
+        $member['organization_code'] = '';
+
         setCurrentMember($member);
         !empty($member['authorize']) && NodeService::applyProjectAuthNode();
         $member = getCurrentMember();
         $tokenList = JwtService::initToken(['code' => $member['code']]);
         $accessTokenExp = JwtService::decodeToken($tokenList['accessToken'])->exp;
         $tokenList['accessTokenExp'] = $accessTokenExp;
-//        $loginInfo = ['member' => $member, 'tokenList' => $tokenList, 'organizationList' => $organizationList];
-        $loginInfo = ['member' => $member, 'tokenList' => $tokenList];
+        $loginInfo = ['member' => $member, 'tokenList' => $tokenList, 'organizationList' => $organizationList];
+//        $loginInfo = ['member' => $member, 'tokenList' => $tokenList];
         session('loginInfo', $loginInfo);
         logRecord($loginInfo, 'info', 'member/login');
         return $loginInfo;
