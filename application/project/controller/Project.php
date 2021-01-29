@@ -11,6 +11,7 @@ use app\common\Model\ProjectMember;
 use app\common\Model\ProjectReport;
 use app\common\Model\TaskStages;
 use app\common\Model\ProjectTemplate;
+use app\common\Model\TaskStagesTemplate;
 use controller\BasicApi;
 use service\DateService;
 use think\Db;
@@ -181,8 +182,6 @@ class Project extends BasicApi
                     }
                 }
 
-
-
                 //项目负责人
                 $item['belong_member'] = $item->belongMember;
 
@@ -209,7 +208,172 @@ class Project extends BasicApi
 
             $list['delay_total'] = $delay_project_count;
         }
+
+
         $this->success('', $list);
+    }
+
+    // 项目统计
+    public function statistic(Request  $request)
+    {
+
+        $deleted = 0;
+        $archive = 0;
+
+        $where = [
+            ['archive', '=', $archive],
+            ['deleted', '=', $deleted]
+        ];
+
+        $data = [];
+
+
+
+        // get all projects
+        $list = $this->model->where($where)->select();
+
+        // 各部门的统计
+        // get all departments
+        $departments = Department::where('organization_code',  '')->field('id,name')->select();
+        // 项目数量, 滞后的项目数量
+        $data['dept'] = $departments;
+
+        // init
+        foreach ($data['dept'] as $key => &$dep_item) {
+            // 各部门的总项目数量
+            $dep_item['total'] = 0;
+            // 各部门的滞后项目数量
+            $dep_item['delay_total'] = 0;
+        }
+
+        # 找到对应的 project template
+        $project_template_name = '专项研究课题';
+        $project_template = ProjectTemplate::where('name',$project_template_name)->find();
+        $projrect_stages = TaskStagesTemplate::where(['project_template_code' => $project_template['code']])->order('sort desc,id asc')->field('id,name')->select();
+
+        // 各阶段
+        $data['stages'] = $projrect_stages;
+        foreach ($data['stages'] as &$d_stage) {
+            $d_stage['count'] = 0;
+            $d_stage['delay_count'] = 0;
+        }
+
+        if ($list) {
+            foreach ($list as $key => &$item) {
+                $item['owner_name'] = '-';
+                if (isset($item['project_code'])) {
+                    $item['code'] = $item['project_code'];
+                    $item = $this->model->where(['code' => $item['code']])->find();
+                }
+
+                $owner = ProjectMember::alias('pm')->leftJoin('member m', 'pm.member_code = m.code')->where(['pm.project_code' => $item['code'], 'is_owner' => 1])->field('member_code,name')->find();
+                $item['owner_name'] = $owner['name'];
+
+                // 当前任务阶段(人工设置)
+                // $item['current_task_stage'] = $item->currentTaskStage;
+
+                $item['delay'] = false;
+
+                // 获取该项目所有阶段 list
+                $ts_list = TaskStages::where('project_code', $item['code'])->order('id', 'asc')->select();
+
+                $now = date("Y-m-d h:i:s");
+                // 遍历每个项目的所有阶段
+                if ($ts_list) {
+                    foreach ($ts_list as &$ts_item) {
+
+                        // unset status
+                        unset($ts_item['status']);
+
+                        // 该阶段是否滞后, default = false
+                        $ts_item['delay'] = false;
+
+                        if($ts_item['plan_date']) {
+                            // 当前时间 >= 计划时间
+                            if(strtotime($now) >= strtotime($ts_item['plan_date'])) {
+                                // 如果没有设置实际执行时间 execute_time 判断为滞后
+                                if(!$ts_item['execute_date']) {
+                                    $ts_item['delay'] = true;
+                                    $item['delay'] = true;
+                                } else {
+                                    $item['delay'] = false;
+                                }
+                                // 项目的当前阶段(自动计算)
+                                $item['current_stage'] = $ts_item;
+                            }
+
+                        }
+                    }
+                }
+
+                //项目负责人
+                $item['belong_member'] = $item->belongMember;
+
+                //负责部门
+                $item['belong_department'] = $item->belongDepartment;
+
+                //项目合同
+//                $item['contract'] = $item->contract;
+
+            }
+            unset($item);
+
+
+
+            // 滞后的项目数量
+            $delay_project_count = 0;
+
+            // 遍历项目
+            foreach ($list as $item) {
+
+                // 遍历部门
+                foreach ($data['dept'] as $key => &$dep_item) {
+                    if($dep_item['id'] == $item['belong_department']['id']) {
+                        $dep_item['total'] = $dep_item['total'] + 1;
+
+                        if($item['delay']) {
+                            $dep_item['delay_total'] = $dep_item['delay_total'] + 1;
+                        }
+
+                        break;
+                    }
+
+                }
+                if($item['delay']) {
+                    $delay_project_count++;
+                }
+
+                // 存在 current_stage
+                if(isset($item['current_stage'])) {
+                    // 遍历各阶段
+                    foreach ($data['stages'] as &$d_stage) {
+                        if($d_stage['name'] == $item['current_stage']['name']) {
+                            $d_stage['count'] = $d_stage['count'] + 1;
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+            // 总体
+            // 项目数量
+            $data['total'] = count($list);
+
+            // 滞后的项目数量
+            $data['delay_total'] = $delay_project_count;
+        }
+
+
+        // 各阶段滞后的项目数量
+
+        // 项目金额
+
+
+
+
+        $this->success("",$data);
+
     }
 
     public function analysis(Request $request)

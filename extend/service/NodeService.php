@@ -23,20 +23,21 @@ class NodeService
     {
 //        cache('member_need_access_node', null);
         $member = getCurrentMember();
-//        $member['nodes'] = [];
-//        if (($authorize = $member['authorize'])) {
-//            $where = ['status' => '1'];
-//            $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where($where)->column('id');
-//            if (empty($authorizeIds)) {
-//                $member['nodes'] = [];
-//                return setCurrentMember($member);
-//            }
-//            $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
-//            $member['nodes'] = $nodes;
-//            return setCurrentMember($member);
-//        }
-//        return setCurrentMember($member);
+        $member['nodes'] = [];
+        if (($authorize = $member['authorize'])) {
+            $where = ['status' => '1'];
+            $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where($where)->column('id');
+            if (empty($authorizeIds)) {
+                $member['nodes'] = [];
+                return setCurrentMember($member);
+            }
+            $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
+            $member['nodes'] = $nodes;
+            return setCurrentMember($member);
+        }
+        return setCurrentMember($member);
         $nodes = self::getMemberNodes($member['organization_code'], $member['account_id']);
+//        $nodes = self::getMemberNodes('', '');
         $member['nodes'] = $nodes;
         setCurrentMember($member);
         return $nodes;

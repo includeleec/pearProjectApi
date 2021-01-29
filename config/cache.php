@@ -21,7 +21,7 @@ if (Env::get('cache.type', 'redis') == 'redis') {
         // 服务器地址
         'host' => Env::get('redis.host', '127.0.0.1'),
         // 密码
-        'password' => Env::get('redis.password', ''),
+        'password' => Env::get('redis.password', 'gridsystem'),
         // 端口
         'port' => Env::get('redis.port', 6379),
         // 缓存保存目录
