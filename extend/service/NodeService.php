@@ -25,43 +25,68 @@ class NodeService
         $member = getCurrentMember();
         $member['nodes'] = [];
         if (($authorize = $member['authorize'])) {
-            $where = ['status' => '1'];
-            $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where($where)->column('id');
-            if (empty($authorizeIds)) {
-                $member['nodes'] = [];
-                return setCurrentMember($member);
-            }
-            $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
+            // $where = ['status' => '1'];
+            // $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where($where)->column('id');
+            // if (empty($authorizeIds)) {
+            //     $member['nodes'] = [];
+            //     return setCurrentMember($member);
+            // }
+            // $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
+
+            // get all project auth nodes
+            $nodes = Db::name('ProjectAuthNode')->column('node');
+
             $member['nodes'] = $nodes;
             return setCurrentMember($member);
         }
         return setCurrentMember($member);
-        $nodes = self::getMemberNodes($member['organization_code'], $member['account_id']);
+        $nodes = self::getMemberNodes($member['id']);
 //        $nodes = self::getMemberNodes('', '');
         $member['nodes'] = $nodes;
         setCurrentMember($member);
         return $nodes;
     }
 
-    public static function getMemberNodes($orgCode, $memberAccountId)
+    public static function getMemberNodes($memberId)
     {
-        $cacheKey = 'member:nodes:' . $memberAccountId;
-        $tagKey = 'member:codes:' . $orgCode;
+        $cacheKey = 'member:nodes:' . $memberId;
+        $tagKey = 'member:nodes';
 //        self::clearMemberNodes($orgCode);
         $nodes = Cache::tag($tagKey)->get($cacheKey);
         if (!$nodes) {
-            $member = MemberAccount::get($memberAccountId);
-            $authorize = $member['authorize'];
-            $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where(['status' => '1'])->column('id');
-            if (empty($authorizeIds)) {
-                $nodes = [];
-            } else {
-                $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
-            }
+            // $member = MemberAccount::get($memberAccountId);
+            // $authorize = $member['authorize'];
+            // $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where(['status' => '1'])->column('id');
+            // if (empty($authorizeIds)) {
+            //     $nodes = [];
+            // } else {
+            //     $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
+            // }
+            $nodes = Db::name('ProjectAuthNode')->column('node');
             Cache::tag($tagKey)->set($cacheKey, $nodes, 3600 * 24 * 7);
         }
         return $nodes;
     }
+
+//     public static function getMemberNodes($orgCode, $memberAccountId)
+//     {
+//         $cacheKey = 'member:nodes:' . $memberAccountId;
+//         $tagKey = 'member:codes:' . $orgCode;
+// //        self::clearMemberNodes($orgCode);
+//         $nodes = Cache::tag($tagKey)->get($cacheKey);
+//         if (!$nodes) {
+//             $member = MemberAccount::get($memberAccountId);
+//             $authorize = $member['authorize'];
+//             $authorizeIds = Db::name('ProjectAuth')->whereIn('id', explode(',', $authorize))->where(['status' => '1'])->column('id');
+//             if (empty($authorizeIds)) {
+//                 $nodes = [];
+//             } else {
+//                 $nodes = Db::name('ProjectAuthNode')->whereIn('auth', $authorizeIds)->column('node');
+//             }
+//             Cache::tag($tagKey)->set($cacheKey, $nodes, 3600 * 24 * 7);
+//         }
+//         return $nodes;
+//     }
 
     public static function clearMemberNodes($orgCode)
     {
