@@ -58,7 +58,8 @@ class Member extends CommonModel
             $list = MemberAccount::where(['member_code' => $member['code']])->order('id asc')->select()->toArray();
         }
 
-        $organizationList = self::getOrgList($member['code'], true);
+        // $organizationList = self::getOrgList($member['code'], true);
+        $organizationList = [];
         if ($list) {
             foreach ($list as &$item) {
                 $departments = [];

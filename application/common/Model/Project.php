@@ -167,6 +167,7 @@ class Project extends CommonModel
 
             $project = [
                 'create_time' => nowTime(),
+                'excel_id' => $data['excel_id'],
                 'code' => createUniqueCode('project'),
                 'name' => $data['name'],
                 'belong_member_id' => $member['id'],
@@ -175,14 +176,14 @@ class Project extends CommonModel
                 'task_board_theme' => 'simple',
                 'set_up_year' => $data['set_up_year'],
                 'apply_set_up_date' => returnValidDatetime($data['apply_set_up_date']),
-                'annual_assignment_date' => $data['annual_assignment_date'],
+                'annual_assignment_date' => returnValidDatetime($data['annual_assignment_date']),
                 'annual_assignment_batch' => $data['annual_assignment_batch'],
-                'bidding_plan_submission_date'=> $data['bidding_plan_submission_date'],
+                'bidding_plan_submission_date'=> returnValidDatetime($data['bidding_plan_submission_date']),
                 'bidding_no' => $data['bidding_no'],
                 'bidding_batch' => $data['bidding_batch'],
                 'bidding_amount' => $data['bidding_amount'],
-                'bidding_evaluation_date' => $data['bidding_evaluation_date'],
-                'winning_bid_accept_date' => $data['winning_bid_accept_date'],
+                'bidding_evaluation_date' => returnValidDatetime($data['bidding_evaluation_date']),
+                'winning_bid_accept_date' => returnValidDatetime($data['winning_bid_accept_date']),
                 'winning_bid_name' => $data['winning_bid_name']
 
             ];
@@ -193,12 +194,12 @@ class Project extends CommonModel
             $contract = [
                 'name' => $data['contract_name'],
                 'code' => $data['contract_code'],
-                'assign_date' => $data['contract_assign_date'],
-                'performance_start_date' => $data['contract_performance_start_date'],
-                'performance_end_date' => $data['contract_performance_end_date'],
+                'assign_date' => returnValidDatetime($data['contract_assign_date']),
+                'performance_start_date' => returnValidDatetime($data['contract_performance_start_date']),
+                'performance_end_date' => returnValidDatetime($data['contract_performance_end_date']),
                 'amount' => $data['contract_amount'],
                 'warranty_amount' => $data['contract_warranty_amount'],
-                'warranty_date' => $data['contract_warranty_date'],
+                'warranty_date' => returnValidDatetime($data['contract_warranty_date']),
                 'contact_name' => $data['contract_contact_name'],
                 'contact_mobile' => $data['contract_contact_mobile'],
                 'project_id' => $result['id']
