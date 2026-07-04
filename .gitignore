@@ -5,6 +5,9 @@
 *.svn
 *.git
 .env
+.env.production
+server.key
+*.key
 /runtime
 /log
 /vendor
